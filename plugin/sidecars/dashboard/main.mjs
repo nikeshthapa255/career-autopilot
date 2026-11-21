@@ -2,7 +2,7 @@
  * Career Autopilot UI Extension sidecar backend (read-only).
  *
  * Discovers private Career Autopilot workspaces automatically from scheduled
- * sidecar configs (~/.gemini/config/sidecars/*/sidecar.json) or an explicit
+ * sidecar configs (~/.gemini/config/sidecars/<id>/sidecar.json) or an explicit
  * ?workspace= path, parses tracker.md, new_leads.md, GLOBAL_REFERENCE.md,
  * and optional requirements/README.md, and serves a live Antigravity Aux Pane UI.
  */
