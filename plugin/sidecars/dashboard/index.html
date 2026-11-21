@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'none'; child-src 'none'">
+  <title>Career Autopilot</title>
+  <script src="/preload.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app" class="shell">
+    <header class="header">
+      <div class="header-top">
+        <div class="title-group">
+          <h1 class="title">Career Autopilot</h1>
+          <span id="live-pill" class="live-pill" role="status" aria-live="polite">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span id="live-label">Syncing</span>
+          </span>
+        </div>
+        <div class="header-actions">
+          <button id="btn-path" type="button" class="icon-btn" title="Open another workspace path" aria-expanded="false" aria-controls="path-drawer">Folder</button>
+          <button id="btn-refresh" type="button" class="icon-btn" title="Refresh now">Refresh</button>
+        </div>
+      </div>
+
+      <div class="ws-bar">
+        <label class="sr-only" for="ws-select">Active workspace</label>
+        <select id="ws-select" class="ws-select" aria-label="Active workspace"></select>
+        <div id="quick-files" class="quick-files"></div>
+      </div>
+
+      <form id="path-drawer" class="path-drawer hidden">
+        <label class="sr-only" for="ws-input">Workspace folder path</label>
+        <input id="ws-input" type="text" class="text-input" placeholder="~/career-workspace or /path/to/workspace" autocomplete="off">
+        <button type="submit" class="primary-btn">Load</button>
+      </form>
+
+      <div id="error-banner" class="banner banner-error hidden" role="alert"></div>
+
+      <nav class="tabs" role="tablist" aria-label="Career Autopilot views">
+        <button type="button" role="tab" id="tabbtn-pipeline" aria-controls="tab-pipeline" aria-selected="true" data-tab="pipeline" class="tab active">
+          Pipeline <span id="count-pipeline" class="tab-count">0</span>
+        </button>
+        <button type="button" role="tab" id="tabbtn-blockers" aria-controls="tab-blockers" aria-selected="false" tabindex="-1" data-tab="blockers" class="tab">
+          Blockers <span id="count-blockers" class="tab-count">0</span>
+        </button>
+        <button type="button" role="tab" id="tabbtn-leads" aria-controls="tab-leads" aria-selected="false" tabindex="-1" data-tab="leads" class="tab">
+          Leads <span id="count-leads" class="tab-count">0</span>
+        </button>
+        <button type="button" role="tab" id="tabbtn-fit" aria-controls="tab-fit" aria-selected="false" tabindex="-1" data-tab="fit" class="tab">
+          Fit Map <span id="count-fit" class="tab-count">0</span>
+        </button>
+        <button type="button" role="tab" id="tabbtn-automations" aria-controls="tab-automations" aria-selected="false" tabindex="-1" data-tab="automations" class="tab">
+          Automations <span id="count-automations" class="tab-count">0</span>
+        </button>
+      </nav>
+    </header>
+
+    <main class="main">
+      <section id="empty-state" class="empty-state hidden">
+        <h2>No Career Autopilot workspace detected</h2>
+        <p>Initialize a private workspace or load an existing folder containing <code>GLOBAL_REFERENCE.md</code> or <code>applications/tracker.md</code>.</p>
+        <pre class="code-block">init-workspace.sh ~/career-workspace</pre>
+        <p class="muted">Click <strong>Folder</strong> above to load a workspace path directly.</p>
+      </section>
+
+      <section id="tab-pipeline" class="tab-panel active" role="tabpanel" aria-labelledby="tabbtn-pipeline">
+        <div id="kpi-strip" class="kpi-strip"></div>
+        <div class="filter-bar">
+          <input id="pipeline-search" type="search" class="text-input" placeholder="Filter company, role, status..." aria-label="Filter applications">
+          <select id="pipeline-filter" class="select-sm" aria-label="Filter by status">
+            <option value="">All statuses</option>
+            <option value="submitted">Submitted</option>
+            <option value="partial">Email sent</option>
+            <option value="ready">Ready / Pre-filled</option>
+            <option value="blocked">Blocked</option>
+            <option value="queued">Queued</option>
+            <option value="skipped">Skipped</option>
+          </select>
+        </div>
+        <div id="pipeline-list" class="card-list"></div>
+      </section>
+
+      <section id="tab-blockers" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-blockers">
+        <div class="section-row">
+          <span id="blockers-summary" class="muted"></span>
+          <label class="toggle-label">
+            <input id="show-resolved" type="checkbox"> Show resolved
+          </label>
+        </div>
+        <div id="blockers-list" class="card-list"></div>
+      </section>
+
+      <section id="tab-leads" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-leads">
+        <div class="section-row">
+          <span id="leads-meta" class="muted"></span>
+          <select id="leads-tier-filter" class="select-sm" aria-label="Filter leads by tier">
+            <option value="">All tiers</option>
+            <option value="Tier A">Tier A</option>
+            <option value="Tier B1">Tier B1</option>
+            <option value="Tier B2">Tier B2</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div id="leads-list" class="card-list"></div>
+      </section>
+
+      <section id="tab-fit" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-fit">
+        <div id="fit-content"></div>
+      </section>
+
+      <section id="tab-automations" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-automations">
+        <div id="policy-card" class="card"></div>
+        <h2 class="subheading">Scheduled sidecars</h2>
+        <div id="automations-list" class="card-list"></div>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

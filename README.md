@@ -81,7 +81,7 @@ See [automations/README.md](automations/README.md) for custom schedules, Gmail v
 
 | Path | Contents |
 | :--- | :--- |
-| [plugin/](plugin/README.md) | Distributable Antigravity plugin (`plugin.json`, root `hooks.json`, `rules/AGENTS.md`, `agents/`, and 5 skills: `career-autopilot-onboard`, `career-autopilot-scout`, `career-autopilot-fit` [optional], `career-autopilot-apply`, `clear-natural-english`) |
+| [plugin/](plugin/README.md) | Distributable Antigravity plugin (`plugin.json`, root `hooks.json`, `rules/AGENTS.md`, `agents/`, live UI Extension `sidecars/dashboard/`, and 5 skills: `career-autopilot-onboard`, `career-autopilot-scout`, `career-autopilot-fit` [optional], `career-autopilot-apply`, `clear-natural-english`) |
 | [workspace-template/](workspace-template/GLOBAL_REFERENCE.md.template) | Starter files for a private candidate workspace (`.gitignore`, `GLOBAL_REFERENCE.md.template`, `master_profile.md.template`, `tracker.md.template`, `new_leads.md.template`, optional `requirements/README.md.template`) |
 | [automations/](automations/README.md) | Parameterized scheduled sidecar templates (`find-new-jobs`, `auto-apply`) and `install-sidecars.sh` |
 | [docs/](docs/framework-architecture.md) | Architecture and platform guides: [framework architecture](docs/framework-architecture.md), [plugin and sidecar spec](docs/antigravity-plugin-and-sidecar-spec.md), [browser architecture](docs/browser-extension-architecture.md), and [onboarding guide](docs/onboarding-guide.md) |

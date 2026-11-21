@@ -362,6 +362,14 @@ Job application automation/
 │   ├── agents/                                   # Specialized subagent definitions (zero PII)
 │   │   ├── career-autopilot-scout.md             # Phase 1 read-only API/feed scout + trap screener
 │   │   └── career-autopilot-worker.md            # Phase 2 isolated per-slug worker (Workflows 1/2-prep/3-prep)
+│   ├── sidecars/
+│   │   └── dashboard/                            # Live Antigravity Aux Pane UI Extension (has_web_ui: true)
+│   │       ├── sidecar.json                      # SIDECAR_UI_ENTRYPOINT_AUX_PANE config
+│   │       ├── package.json
+│   │       ├── main.mjs                          # Read-only SidecarApp server
+│   │       ├── index.html
+│   │       ├── styles.css
+│   │       └── app.js
 │   └── skills/
 │       ├── career-autopilot-onboard/
 │       │   ├── SKILL.md                          # Phase 0: resume parser + preference interview + workspace init

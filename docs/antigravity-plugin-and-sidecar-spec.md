@@ -21,6 +21,14 @@ plugin/
 ├── agents/
 │   ├── career-autopilot-scout.md       # Read-only Phase 1 discovery scout
 │   └── career-autopilot-worker.md      # Isolated Phase 2 per-application worker
+├── sidecars/
+│   └── dashboard/                      # Live Aux Pane UI Extension (has_web_ui: true)
+│       ├── sidecar.json                # SIDECAR_UI_ENTRYPOINT_AUX_PANE config
+│       ├── package.json
+│       ├── main.mjs                    # Read-only SidecarApp backend
+│       ├── index.html
+│       ├── styles.css
+│       └── app.js
 └── skills/
     ├── career-autopilot-onboard/       # Phase 0 intake, preferences, workspace init
     │   ├── SKILL.md

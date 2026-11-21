@@ -1,0 +1,21 @@
+{
+  "command": "node",
+  "args": ["main.mjs"],
+  "restart_policy": "always",
+  "display_name": "Career Autopilot",
+  "description": "Live dashboard for Career Autopilot: application pipeline tracker, scouted leads, optional role-fit rubric, open HITL blockers, and scheduled automation status.",
+  "has_web_ui": true,
+  "agent_permissions": {
+    "allows_user_interactions": false
+  },
+  "ui_config": {
+    "display_name": "Career Autopilot",
+    "views": [
+      {
+        "path": "/",
+        "entrypoint": "SIDECAR_UI_ENTRYPOINT_AUX_PANE",
+        "title": "Career Autopilot"
+      }
+    ]
+  }
+}

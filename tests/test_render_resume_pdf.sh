@@ -14,6 +14,8 @@ FIX_TRAPS="$SCRIPT_DIR/fixtures/sample_ats_traps.html"
 
 PLUGIN_JSON="$REPO_ROOT/plugin/plugin.json"
 HOOKS_JSON="$REPO_ROOT/plugin/hooks.json"
+DASHBOARD_SIDECAR="$REPO_ROOT/plugin/sidecars/dashboard/sidecar.json"
+DASHBOARD_PKG="$REPO_ROOT/plugin/sidecars/dashboard/package.json"
 SCOUT_SIDECAR="$REPO_ROOT/automations/find-new-jobs.sidecar.json.template"
 APPLY_SIDECAR="$REPO_ROOT/automations/auto-apply.sidecar.json.template"
 
@@ -142,6 +144,8 @@ echo "PASS: ATS trap fixture integrity verified"
 # 2. Validate JSON files
 validate_json_file "$PLUGIN_JSON" 1
 validate_json_file "$HOOKS_JSON" 0
+validate_json_file "$DASHBOARD_SIDECAR" 0
+validate_json_file "$DASHBOARD_PKG" 0
 validate_json_file "$SCOUT_SIDECAR" 0
 validate_json_file "$APPLY_SIDECAR" 0
 

@@ -15,6 +15,7 @@ The plugin keeps all logic, prompts, templates, and safety checks inside `career
 - **Subagents**
   - `career-autopilot-scout`: Read-only Phase 1 discovery and screening scout.
   - `career-autopilot-worker`: Phase 2 isolated per-application worker scoped strictly to one `applications/<company-slug>/` folder.
+- **UI Extension (`sidecars/dashboard/`)**: Read-only Antigravity side-pane dashboard (`has_web_ui: true`, `SIDECAR_UI_ENTRYPOINT_AUX_PANE`) showing live application statuses, open HITL blockers, scouted leads, optional `requirements/` fit tracks, and configured scheduled sidecars (`sidecar://career-autopilot/dashboard/`).
 - **Always-on rules (`rules/AGENTS.md`)**: Enforces zero fabrication, `[TODO:` placeholder gates, safe `hitl_pre_submit` default, unconditional anti-bot/anti-CAPTCHA/no-email-code-bypass rules, prompt-injection/honeypot defense, shady legal clause escalation, and strict HITL cold email gates.
 - **Lifecycle hook (`hooks.json` -> `hooks/pre_tool_safety.sh`)**: Portable POSIX `sh` `PreToolUse` gate for `run_command` that blocks unattended Gmail sends (`AGY_UNATTENDED`), enforces interactive confirmation (`force_ask`) on live Gmail sends, prevents staging or attaching PDFs with unresolved `[TODO:` markers, blocks direct headless `--print-to-pdf` bypasses, and blocks prohibited PDF engines or direct config file edits.
 
