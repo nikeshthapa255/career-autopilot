@@ -1,0 +1,18 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Career Autopilot</title>
+  <!-- Rounded badge with >=10% outer margin and high-contrast edge for light and dark themes -->
+  <rect x="15" y="15" width="98" height="98" rx="22" fill="#1D4ED8" stroke="#60A5FA" stroke-width="3"/>
+  <!-- Crisp resume document silhouette -->
+  <path d="M36 32H63L76 45V91C76 93.7614 73.7614 96 71 96H36C33.2386 96 31 93.7614 31 91V37C31 34.2386 33.2386 32 36 32Z" fill="#FFFFFF"/>
+  <!-- Folded document corner -->
+  <path d="M63 32V42C63 43.6569 64.3431 45 66 45H76L63 32Z" fill="#93C5FD"/>
+  <!-- Resume header and bullet lines -->
+  <rect x="39" y="45" width="18" height="5" rx="2.5" fill="#1E3A8A"/>
+  <rect x="39" y="56" width="29" height="4" rx="2" fill="#2563EB"/>
+  <rect x="39" y="65" width="26" height="4" rx="2" fill="#2563EB"/>
+  <rect x="39" y="74" width="18" height="4" rx="2" fill="#2563EB"/>
+  <!-- Autopilot takeoff arrow with contrast halo -->
+  <path d="M62 76L99 51L82 91L75 78L62 76Z" fill="#10B981" stroke="#1D4ED8" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M62 76L99 51L82 91L75 78L62 76Z" fill="#34D399" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M75 78L99 51" stroke="#065F46" stroke-width="2" stroke-linecap="round"/>
+</svg>

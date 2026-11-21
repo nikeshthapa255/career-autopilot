@@ -1,0 +1,29 @@
+# Defensive .gitignore for your private Career Autopilot job-search workspace.
+# Prevents accidental commits of personal resumes, PII, credentials, and application packets.
+
+# Personal profile, preferences, and generated resumes
+GLOBAL_REFERENCE.md
+resume/master_profile.md
+resume/*.pdf
+resume/*.html
+resume/*.docx
+resume/*.doc
+resume/*.txt
+
+# All application logs, leads, cold-email dossiers, and tailored resume packets
+applications/*
+!applications/*.template
+*.pdf
+
+# Local overrides, environment files, temporary staging, and OS artifacts
+*.local.*
+*.local
+scratch/
+browser_sandbox/
+.env
+.env.*
+*.bak
+*.tmp
+*.log
+.DS_Store
+Thumbs.db

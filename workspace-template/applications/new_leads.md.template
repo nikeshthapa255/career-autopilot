@@ -1,0 +1,49 @@
+# Newly Verified Leads & Exclusions Ledger
+
+> **Discovery Log:** Automated discovery runs (`career-autopilot-scout`) append newly verified active roles here (`zero duplicates` against `applications/tracker.md` and prior runs below using canonical key `normalize(company_slug)::normalize(ats_job_id || canonical_url)`).  
+> **Target Geo / TZ:** `{{RESUME_HEADER_LOCATION}}` (`{{APPROVED_HIRING_REGIONS}}`) | **Comp Floor:** `>= {{COMP_FLOOR_AMOUNT}} {{COMP_FLOOR_CURRENCY}}` (FX snapshot: `{{FX_SNAPSHOT_DATE}}`)
+
+---
+
+## Run: {{DATE}}
+
+**Sources Audited:** Ashby (`posting-api` + `ApiJobPosting`), Greenhouse (`boards-api` + embed), Lever, YC Jobs, HN *Who is Hiring*, and configured company/portal boards.  
+**Summary:** `0` new Tier A, `0` Tier B1, `0` Tier B2, `0` Pending Browser Verification, `0` Excluded.
+
+### Tier A: Primary Geo & Preferred TZ Overlap / Async + Verified >= Comp Floor
+
+| # | Company (Track) | Role | Dedup Key | Comp & Floor Check | Geo, Work Mode & TZ | Fit | Live Form / Gate & Traps | Direct URL |
+| :- | :--- | :--- | :--- | :--- | :--- | :-: | :--- | :--- |
+<!-- Append verified Tier A leads here and queue in applications/tracker.md -->
+
+---
+
+### Tier B: Conditional Leads
+
+#### Tier B1: Preferred Geo & TZ — Upper Comp Band Clears Floor (Queued with Target Ask)
+
+| # | Company (Track) | Role | Dedup Key | Comp & Target Note | Geo, Work Mode & TZ | Fit | Live Form / Gate & Traps | Direct URL |
+| :- | :--- | :--- | :--- | :--- | :--- | :-: | :--- | :--- |
+<!-- Append verified Tier B1 leads here and queue in applications/tracker.md -->
+
+#### Tier B2: Extended TZ Overlap (e.g. US Night Hours), Location-Adjusted EOR Risk, Fixed-Term/Contract, or Stretch YOE
+
+| # | Company (Track) | Role | Dedup Key | Comp & Caveat | Geo, Work Mode & TZ | Fit | Live Form / Gate & Traps | Direct URL |
+| :- | :--- | :--- | :--- | :--- | :--- | :-: | :--- | :--- |
+<!-- Append Tier B2 conditional leads here; queue selectively per user priority -->
+
+---
+
+### Pending Browser Verification (`HTTP 403` / JS-Rendered / Authenticated Portal)
+
+<!-- Log roles blocked from read-only curl inspection for interactive Mode A/Mode B browser check -->
+
+---
+
+### Excluded Roles Ledger (Deduped — Do Not Re-Queue)
+
+- **Below Comp Floor (`< comp_floor`):** *(none yet)*
+- **Geo / Work-Mode / Visa Restricted:** *(none yet)*
+- **Seniority Stretch Exceeded (`> max_yoe_stretch`):** *(none yet)*
+- **Role Track Mismatch (`excluded_role_signals` / `< skill_match_min_pct`):** *(none yet)*
+- **Unstated Compensation (`require_explicit_comp == strict_exclude_unstated`):** *(none yet)*

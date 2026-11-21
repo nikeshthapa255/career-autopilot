@@ -1,0 +1,96 @@
+# {{FULL_NAME}} — Canonical Master Profile
+
+> **Source of Truth:** Extracted strictly from your baseline resume (`PDF` / `DOCX` / `Markdown`) during Phase 0 onboarding (`career-autopilot-onboard`). All tailored resumes, ATS form answers, and outreach emails MUST draw facts, dates, titles, employers, skills, and metrics solely from this document. **Zero fabrication allowed.**
+
+---
+
+## Header & Contact Details
+
+- **Name:** `{{FULL_NAME}}` *(Optional pronouns: `{{PRONOUNS}}`)*
+- **Email:** `{{EMAIL}}`
+- **Phone:** `[OMITTED BY POLICY]` *(Private workspace value: `{{PHONE_E164}}` — e.g. `+91 XXXXXXXXXX`; omitted from PDFs and `[OPT]` ATS fields unless `phone_policy` specifies otherwise, supplied only when an ATS marks Phone `[REQ]`.)*
+- **LinkedIn:** `{{LINKEDIN_URL}}`
+- **GitHub / Portfolio / Website:** `{{GITHUB_OR_PORTFOLIO_URL}}`
+- **Location & Work Authorization:** `{{RESUME_HEADER_LOCATION}}` *(Default: `India (IST / UTC+5:30; no US visa/work permit)` — ATS City field: `{{ATS_CITY_VALUE}}`)*
+- **Target Roles / Notice Period / Overlap:** `{{TARGET_ROLES_SUMMARY}}` | Notice period: `{{NOTICE_PERIOD_DAYS}} days` | Extended overlap (e.g. US evening/night): `{{EXTENDED_OVERLAP_WILLINGNESS}}`
+
+---
+
+## Summary
+
+{{PROFESSIONAL_SUMMARY}}
+<!-- Keep to 2-3 crisp sentences grounded in verified scope, years of full-time experience, and measurable impact. -->
+
+---
+
+## Experience
+
+### {{EMPLOYER_1}} — {{TITLE_1}}
+**Dates:** {{START_1}} – {{END_1}} *(Full-time | Location / Remote)*
+
+- {{EXPERIENCE_1_BULLET_1}}
+- {{EXPERIENCE_1_BULLET_2}}
+- {{EXPERIENCE_1_BULLET_3}}
+
+### {{EMPLOYER_2}} — {{TITLE_2}}
+**Dates:** {{START_2}} – {{END_2}} *(Full-time | Location / Remote)*
+
+- {{EXPERIENCE_2_BULLET_1}}
+- {{EXPERIENCE_2_BULLET_2}}
+
+### {{INTERNSHIP_EMPLOYER_OR_REMOVE}} — {{INTERNSHIP_TITLE}} *(Optional — Internships)*
+**Dates:** {{INTERN_START}} – {{INTERN_END}} *(Internship — do not count toward full-time YOE)*
+
+- {{INTERNSHIP_BULLET_1}}
+
+---
+
+## Education
+
+- **{{INSTITUTION_1}}** — {{CREDENTIAL_1}} | **{{EDU_DATES_1}}** *(Optional GPA: `[TODO: gpa_if_required]`)*
+- **{{INSTITUTION_2_OR_REMOVE}}** — {{CREDENTIAL_2}} | **{{EDU_DATES_2}}**
+
+---
+
+## Skills & Competency Buckets (Role-Agnostic)
+
+Customize bucket names for your track (for example: **Engineering**: `Languages`, `Backend & Distributed Systems`, `AI / ML`, `Frontend`; **Product**: `Product Strategy`, `Experimentation & Analytics`, `Technical Fluency`; **Design**: `Systems & Prototyping`, `Research`, `Tools`; **GTM / Ops**: `Revenue Systems`, `Lifecycle & Analytics`, `Enablement`).
+
+- **{{COMPETENCY_BUCKET_1_NAME}}:** {{COMPETENCY_BUCKET_1_ITEMS}}
+- **{{COMPETENCY_BUCKET_2_NAME}}:** {{COMPETENCY_BUCKET_2_ITEMS}}
+- **{{COMPETENCY_BUCKET_3_NAME}}:** {{COMPETENCY_BUCKET_3_ITEMS}}
+
+---
+
+## Optional Domain Sections (Keep Applicable Sections, Remove Unused)
+
+### Certifications & Licenses
+- {{CERTIFICATION_1_OR_NONE}}
+
+### Publications, Patents & Talks
+- {{PUBLICATION_OR_TALK_1_OR_NONE}}
+
+### Open Source, Portfolio & Selected Projects
+- {{PROJECT_1_OR_NONE}}
+
+### Leadership, Reviewing & Community
+- {{LEADERSHIP_1_OR_NONE}}
+
+---
+
+## Verified Quantitative Baseline & Grounding Rules (Locked Audit Block)
+
+> **Strict Tailoring Contract:** Downstream tailoring workers may reorder or tighten phrasing for space and role relevance, **never** alter dates, job titles, employers, credentials, or numbers outside this verified ledger.
+
+1. **Confirmed Tenure & Experience Breakdown:**
+   - **Full-Time Experience Start Date:** `{{FULL_TIME_START_DATE}}` (`{{FULL_TIME_YOE}}` years full-time as of `{{PROFILE_AUDIT_DATE}}`).
+   - **Internship Duration (Excluded from Full-Time YOE):** `{{INTERNSHIP_MONTHS}}` months.
+2. **Confirmed Quantitative Metrics & Scope Claims:**
+   - `{{EMPLOYER_1}}`: `[TODO: verbatim_verified_metrics_and_scope_claims]` *(e.g. exact latencies, throughput gains, cost savings, team sizes, customer counts, revenue impact — never extrapolate qualitative claims into invented percentages)*
+   - `{{EMPLOYER_2}}`: `[TODO: verbatim_verified_metrics_and_scope_claims]`
+3. **Required HITL Placeholders (Never Guess or Auto-Fill):**
+   - Phone (`[TODO: phone_e164]` if missing or kept omitted per `phone_policy`)
+   - Portfolio / GitHub URL (`[TODO: github_or_portfolio_url]` if applicable)
+   - City & Notice Period (`[TODO: residence_city]`, `[TODO: notice_period_days]`)
+   - Compensation Floor (`[TODO: comp_floor_amount]`)
+   - Academic GPA / Transcripts (`[TODO: gpa_if_required]` — supply only when an ATS explicitly marks it required)

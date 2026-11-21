@@ -1,0 +1,187 @@
+# Global Reference & Decisions Ledger
+
+> **Purpose:** Single shared configuration, candidate preference source of truth, and centralized ledger of blocked questions discovered across the `career-autopilot` pipeline (`Phase 0`, `Phase 1`, `Phase 2`).  
+> **Concurrency Rule (Up to 32 Workers):** Per-application workers read this file **read-only** and log any new blockers inside their own `applications/<company-slug>/application_state.md`. Only the parent coordinator merges answered questions and new blockers back into this file (`Section 4`) and `applications/tracker.md`.
+
+---
+
+## 1. Candidate Configuration & Operational Policy
+
+Replace all `{{...}}` and `[TODO: ...]` placeholders during Phase 0 onboarding (`career-autopilot-onboard`) before running discovery or applications.
+
+```yaml
+candidate_profile:
+  full_name: "{{FULL_NAME}}"                          # e.g. [TODO: full_name]
+  pronouns: "{{PRONOUNS}}"                            # optional: he/him | she/her | they/them | omit
+  resume_filename_slug: "{{CANDIDATE_SLUG}}"          # e.g. First_Last -> First_Last_<Company>_Resume.pdf
+  email: "{{EMAIL}}"                                  # e.g. [TODO: primary_email]
+  phone:
+    value: "{{PHONE_E164}}"                           # private workspace only; e.g. +91 XXXXXXXXXX or [TODO: phone_e164]
+    policy: "omit_on_pdf_and_optional_supply_if_req"  # omit_everywhere | omit_on_pdf_and_optional_supply_if_req | always_include
+  links:
+    linkedin: "{{LINKEDIN_URL}}"                      # URL or omit
+    github: "{{GITHUB_URL}}"                          # URL or omit (for engineering/data/design portfolios)
+    portfolio_or_website: "{{PORTFOLIO_URL}}"         # URL or omit
+  current_employer: "{{CURRENT_EMPLOYER}}"            # Current employer name or "None" (auto-added to forbidden email subject tokens)
+  actual_full_time_yoe: "{{FULL_TIME_YOE}}"           # Numeric years computed strictly from full-time dates (excluding internships)
+  education_credentials:
+    gpa: "{{ACADEMIC_GPA}}"                           # [TODO: gpa_if_required]
+    transcript_pdf_path: "{{TRANSCRIPT_PDF_PATH}}"    # [TODO: transcript_pdf_path_if_required]
+
+target_roles:
+  titles:                                             # Customize for engineering OR non-engineering tracks
+    - "{{TARGET_ROLE_1}}"                             # e.g. Senior Software Engineer / Product Manager / Staff Designer
+    - "{{TARGET_ROLE_2}}"
+  domain_track: "{{DOMAIN_TRACK}}"                    # engineering | product | design | data | gtm | operations | research
+  competency_buckets:                                 # Mirrors resume/master_profile.md role-agnostic competency sections
+    - "{{COMPETENCY_BUCKET_1}}"
+    - "{{COMPETENCY_BUCKET_2}}"
+    - "{{COMPETENCY_BUCKET_3}}"
+  seniority_window:
+    min_yoe: "{{MIN_YOE}}"                            # e.g. 2
+    max_yoe_stretch: "{{MAX_YOE_STRETCH}}"            # roles above this route to Tier B2 or Excluded
+  role_eligibility_tracks:
+    track_1_skill_match_min_pct: 80                   # Roles matching >= 80% of verified master_profile.md skills
+    track_2_specialty_targets:                        # Stretch / focus tracks the candidate explicitly wants
+      - "{{SPECIALTY_TRACK_1}}"
+  excluded_role_signals:
+    - "security_clearance_only"
+    - "unpaid"
+    - "100%_commission"
+    # Add role types to skip, e.g. "pure_appsec_cve_research", "manual_qa_only", "pure_sales_cold_calling"
+
+target_geos:
+  # Pre-seeded with India-based candidate defaults; override residence_country & regions if based elsewhere.
+  work_modes: ["remote"]                              # Subset of: ["remote", "hybrid", "onsite"]
+  residence_city: "{{RESIDENCE_CITY}}"                # e.g. [TODO: residence_city] (e.g. Bengaluru, Pune, NCR)
+  residence_country: "India"                          # Default: India
+  resume_header_location: "India (IST / UTC+5:30)"    # Shown on general resume header (or "<City>, India" if local hybrid/onsite)
+  ats_city_value: "{{RESIDENCE_CITY}}, India"         # Used when an ATS form explicitly requires City/Location
+  approved_hiring_regions:
+    - "India"
+    - "India Remote"
+    - "APAC"
+    - "Worldwide"
+    - "Anywhere"
+    - "Global Remote"
+  preferred_onsite_hybrid_hubs: []                    # Populate if work_modes includes "hybrid" or "onsite"
+  work_auth_matrix:
+    home_country_authorized: true                     # Authorized to work in India without sponsorship
+    foreign_visas_held: []                            # Default: [] (no US visa / EU Blue Card assumed)
+    sponsorship_policy: "remote_eor_or_contractor_preferred"  # Direct India entity, EOR (Deel/Remote/Rippling), or contractor
+    standard_foreign_visa_answer: "N/A - I will be working outside the target country (remote from India)"
+
+timezone:
+  # Pre-seeded with India Standard Time (Asia/Kolkata); override for other regions.
+  primary_iana: "Asia/Kolkata"                        # Used for CRON_TZ & sidecar scheduling
+  display_label: "IST (UTC+5:30)"
+  preferred_overlap_windows:
+    - "India daytime (IST)"
+    - "APAC / SG / AU overlap"
+    - "EU / UK afternoon overlap"
+    - "Async-first"
+  extended_overlap_willingness: false                 # Set true only if willing to work US evening/night overlap (routes to Tier B2)
+  max_overlap_shift_hours: 4
+
+comp_floor:
+  # Examples:
+  #   Domestic India / EOR INR: amount: 5000000, currency: "INR"  (50 LPA)
+  #   Global Remote USD:        amount: 100000,  currency: "USD"  ($100k+ USD)
+  #   EU Remote EUR:            amount: 85000,   currency: "EUR"  (€85k+ EUR)
+  amount: "{{COMP_FLOOR_AMOUNT}}"                     # [TODO: comp_floor_amount]
+  currency: "{{COMP_FLOOR_CURRENCY}}"                 # INR | USD | EUR | GBP
+  period: "annual"                                    # annual | monthly | hourly
+  contract_annualization_hours: 2000                  # Used to annualize hourly/monthly contractor offers
+  fx_reference_rates:
+    as_of: "{{FX_SNAPSHOT_DATE}}"                     # [TODO: YYYY-MM-DD]
+    rates_to_floor_currency:
+      USD_TO_INR: "{{USD_TO_INR}}"                    # e.g. 85.0 (update with live snapshot during onboarding)
+      EUR_TO_INR: "{{EUR_TO_INR}}"                    # e.g. 92.0
+      EUR_TO_USD: "{{EUR_TO_USD}}"                    # e.g. 1.08
+  accept_location_adjusted_eor: "tier_b2_warn"        # strict_exclude | tier_b2_warn | allow
+  require_explicit_comp: "strict_exclude_unstated"    # strict_exclude_unstated | allow_tier_b2
+
+notice_and_relocation:
+  notice_period_days: "{{NOTICE_PERIOD_DAYS}}"        # [TODO: notice_period_days] (e.g. 30, 60, or 90)
+  earliest_start_strategy: "today_plus_notice"        # fixed_date | today_plus_notice
+  relocation_policy:
+    mode: "{{RELOCATION_MODE}}"                       # remote_only | yes_with_remote_preference_note | yes_unrestricted
+    note: "First preference is always the remote role."
+    open_relocation_hubs: []                          # e.g. ["Bengaluru", "Singapore", "EU"] if applicable
+
+execution_and_safety_policy:
+  # SAFE DEFAULT: hitl_pre_submit pauses after filling & attaching PDF so you click Submit yourself.
+  # OPT-IN NOTE: Change to "yolo_with_guardrails" ONLY if you explicitly opt into auto-submitting clean,
+  # non-blocked ATS web forms. Unconditional hard stops (CAPTCHAs, email codes, logins, anti-LLM honesty,
+  # and shady legal clauses) ALWAYS pause regardless of mode.
+  web_apply_mode: "hitl_pre_submit"                   # hitl_pre_submit (default) | yolo_with_guardrails (opt-in)
+  phone_policy: "omit_on_pdf_and_optional_supply_if_req"
+  standard_policy_checkboxes: "auto_accept_non_shady" # auto-check standard privacy/AI-disclosure/data-retention boxes
+  shady_clause_escalation_triggers:
+    - "broad_non_compete"
+    - "personal_ip_assignment_outside_work"
+    - "invasive_device_or_keystroke_surveillance"
+    - "unusual_legal_or_financial_liability_waiver"
+  resume_page_size: "{{RESUME_PAGE_SIZE}}"            # a4 | letter (A4 common in India/EU; Letter common in US)
+
+outreach_policy:
+  # STRICT HITL: Cold emails are ALWAYS drafted first and require explicit user approval before sending.
+  mode: "hitl_strict"                                 # Never change to auto-send; human approval mandatory
+  email_plugin: "{{EMAIL_PLUGIN}}"                    # gmail | none (none = copy-paste Markdown dossier only)
+  agy_account: "{{EMAIL_ACCOUNT}}"                    # Connected Gmail account or "none"
+  eligibility_rule:
+    require_verified_public_email: true               # Zero email guessing; exact public Source URL mandatory
+    skip_form_only_ats: ["notion_form"]
+    eligible_targets: "established_companies_or_verified_comp_floor_target_domain"
+  subject_template: "Job Application: <Exact Role Title> — {{FULL_NAME}}"
+  forbidden_subject_tokens:
+    - "{{CURRENT_EMPLOYER}}"                          # Auto-populated; never leak current employer in email subjects
+    - "->"
+    # Add any extra confidential employer/project tokens here
+```
+
+### India-First Discovery & Work-Auth Conventions (Customizable)
+- **India EOR / Contractor vs. Direct Entity:** Many global startups hire in India via an Employer of Record (Deel, Remote, Rippling, Oyster, Multiplier) or as an independent international contractor. Flag `"location-adjusted"`, `"local-market EOR benchmarks"`, or `"US work authorization required"` during screening so roles that silently localize below `comp_floor` are caught early.
+- **Remote / Global / APAC / US Overlap:**
+  - `Tier A`: India/APAC/Worldwide/Async roles meeting `comp_floor` with `preferred_overlap_windows`.
+  - `Tier B1`: Same geo/timezone fit where the **upper** posted band clears `comp_floor` (target top of band).
+  - `Tier B2`: Requires `extended_overlap_willingness` (e.g., US PT/ET night overlap), carries EOR localization risk, is fixed-term/contract, or stretches `max_yoe_stretch`.
+- **Resumes vs. ATS City Fields:** Keep general remote resume headers as `India (IST / UTC+5:30)` (or `<City>, India` if targeting local hybrid/onsite), and fill `{{RESIDENCE_CITY}}, India` when an ATS explicitly asks for City/Location.
+
+### Tooling, Browser & Email Guardrails
+- **Resume Source of Truth:** [master_profile.md](./resume/master_profile.md) — **zero fabrication** of dates, titles, employers, credentials, or quantitative baselines.
+- **PDF Renderer:** `render_resume_pdf.sh` / `render_resume_pdf.ps1` — blocks `[TODO:` and `[USER INPUT NEEDED` unless `--allow-todo` is explicitly passed for drafts; verifies strict 1-page output (`read_file` visual inspection mandatory).
+- **Serialized Root Upload Staging:** Antigravity's `browser` subagent resolves `browser_sandbox/uploads/` against the **root parent conversation's** Artifact Directory and clears uploads on turn exit or certain navigations. Parallel prep workers **never** run concurrent browser uploads; the root coordinator stages **one** uniquely named PDF (`<Candidate_Slug>_<Company>_Resume.pdf`) and executes upload turns serially.
+- **Upload Prompt & Tab Isolation:** New ATS origins trigger a 60-second `UPLOAD_NEEDS_PERMISSION` prompt. If it times out, pause and provide the exact PDF path. Never reuse a browser tab paused awaiting user input (CAPTCHA or email verification code); open a new isolated tab (`newPage()`).
+- **Unconditional Anti-Bot & Honesty Stops:** Regardless of `web_apply_mode`, **never** solve or bypass CAPTCHAs, `hCaptcha`, `BOT_CHECK_DETECTED`, login/MFA walls, or `"confirm you're a human"` email verification security codes (never auto-read email to defeat human-verification codes). Tag anti-LLM honesty prompts (`"Confirm no AI assistance was used"`) as `[HUMAN AUTHORING REQUIRED]`.
+- **Cold Email Hold Drafts & Unattended Sidecars:** When `email_plugin: gmail` and preconditions remain unresolved, create a safe hold draft using `--to ""`. Unattended cron sidecars run with `AGY_UNATTENDED=1` and must **never** hold `gmail mutate send*` permissions.
+
+---
+
+## 2. Standard Per-Application Folder Structure
+
+Every queued target gets an isolated directory `applications/<company-slug>/`:
+
+```text
+applications/<company-slug>/
+├── resume_tailored.html                       # Role-tailored HTML cloned from plugin resume_template.html
+├── <Candidate_Slug>_<Company>_Resume.pdf      # Strict 1-page PDF (zero [TODO: markers)
+├── cold_email.md                              # Workflow 3 dossier (only if eligible + verified email)
+└── application_state.md                       # Workflow 2/3 state: URL, field map, traps, blockers, status
+```
+
+---
+
+## 3. Parallel Worker Scaling Rules (Up to 32 Workers)
+
+1. **1 Worker = 1 Slug:** The coordinator spawns up to 32 concurrent workers, each scoped strictly to one `applications/<company-slug>/` directory.
+2. **Read-Only Shared Files:** Workers read `GLOBAL_REFERENCE.md`, `resume/master_profile.md`, and `applications/new_leads.md` **read-only**. Workers never edit `applications/tracker.md` or `GLOBAL_REFERENCE.md` directly.
+3. **Blocker Escalation & Single-Writer Merge:** Workers log missing fields, anti-LLM checks, CAPTCHAs, or shady legal clauses in `applications/<company-slug>/application_state.md` and return structured results to the coordinator, which deterministically updates `applications/tracker.md` and Section 4 below.
+
+---
+
+## 4. Questions & Decisions Ledger
+
+| Q-ID | Question / Missing Field | Affects Applications | Status | Details / Policy Applied | User Answer |
+| :--- | :--- | :--- | :-: | :--- | :--- |
+| **Q1** | `[TODO: initial_onboarding_summary]` | `Setup` | `Pending` | Populate during Phase 0 `career-autopilot-onboard` interview. | `[TODO: user_answer]` |

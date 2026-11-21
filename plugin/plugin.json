@@ -1,0 +1,16 @@
+{
+  "name": "career-autopilot",
+  "displayName": "Career Autopilot",
+  "version": "1.0.0",
+  "description": "Zero-PII, role-agnostic job application automation: onboard from PDF/DOCX/MD resumes, scout and trap-screen roles across ATS APIs and portals, render grounded 1-page PDFs, run guardrailed browser applies, and prepare strict HITL cold outreach.",
+  "author": {
+    "name": "Career Autopilot Contributors"
+  },
+  "repository": "https://github.com/example/career-autopilot",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Onboard my resume into a private Career Autopilot workspace with India-default preferences and render a baseline 1-page PDF",
+    "Scout verified remote and hybrid roles matching my workspace preferences, screen for ATS traps and salary localization, and update new_leads.md",
+    "Tailor a grounded 1-page PDF resume for my top queued roles, run pre-submit browser apply prep, and draft cold outreach"
+  ]
+}

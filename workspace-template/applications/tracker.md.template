@@ -1,0 +1,25 @@
+# Applications Tracker
+
+**Candidate:** `{{FULL_NAME}}` (`{{RESUME_HEADER_LOCATION}}`)  
+**Target Compensation Floor:** `>= {{COMP_FLOOR_AMOUNT}} {{COMP_FLOOR_CURRENCY}}`  
+**Work Modes:** `{{WORK_MODES}}` (`web_apply_mode`: `hitl_pre_submit` default, or opt-in `yolo_with_guardrails`)  
+**Canonical Profile:** [master_profile.md](../resume/master_profile.md) | **Global Config:** [GLOBAL_REFERENCE.md](../GLOBAL_REFERENCE.md)
+
+## Status Legend
+- `Queued — New Lead` — Verified active role (`Tier A` or `Tier B1`) awaiting Workflow 1 resume tailoring and application prep.
+- `Drafted — Pending HITL Review` — Tailored 1-page PDF and cold email dossier (or Gmail draft) prepared; awaiting user approval.
+- `Ready for HITL Browser Apply` — Tailored 1-page PDF and verified ATS form map staged for pre-submit browser fill and user Submit click.
+- `Paused — Human Gate` — Paused cleanly on an unconditional stop (CAPTCHA/hCaptcha, email verification code, login/MFA, `[HUMAN AUTHORING REQUIRED]` anti-LLM check, or shady legal clause).
+- `Submitted (HITL Confirmed)` — Application submitted by user or cold email sent after explicit user approval.
+- `Submitted (YOLO Guardrailed)` — Website application auto-submitted under explicit opt-in `yolo_with_guardrails` after passing all truth/trap/safety gates.
+- `Follow-up Sent` — Day 5–7 outreach follow-up sent after explicit user approval.
+- `Interviewing` / `Closed` — Active interview stage or archived outcome.
+- `Skipped — Role Mismatch` — Excluded on eligibility or track mismatch during pre-apply screening.
+
+## Application Log
+
+| Company | Role | Dedup Key | Track / Workflow | Status | Comp & Geo / TZ | Tailored Resume PDF | Email Draft / Apply URL | Gate Notes | Last Updated |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+<!-- Example row format (coordinator single-writer append):
+| **Example Corp** | Senior Software Engineer | `example-corp::job-123` | `Workflow: 1+2 (Tier A)` | `Queued — New Lead` | `>= 60 LPA INR / $100k USD; India Remote (IST/Async)` | *Pending Workflow 1* | [Apply](https://example.com/jobs/123) | Clean form; 0 traps | YYYY-MM-DD |
+-->
