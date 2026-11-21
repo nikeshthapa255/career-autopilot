@@ -1,11 +1,13 @@
 (() => {
   const POLL_MS = 3000;
   const STORAGE_KEY = 'career-autopilot-workspace';
+  const THEME_STORAGE_KEY = 'career-autopilot-theme-mode';
   const $ = (id) => document.getElementById(id);
 
   const state = {
     tab: 'pipeline',
     workspace: '',
+    themeMode: 'auto', // auto | dark | light
     etag: '',
     snap: null,
     search: '',
@@ -13,6 +15,13 @@
     tierFilter: '',
     showResolved: false,
   };
+
+  try {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme === 'auto' || savedTheme === 'dark' || savedTheme === 'light') {
+      state.themeMode = savedTheme;
+    }
+  } catch {}
 
   const params = new URLSearchParams(location.search);
   const urlWs = params.get('workspace');
@@ -26,24 +35,50 @@
     }
   }
 
-  function syncTheme() {
-    const probe = document.createElement('span');
-    probe.style.cssText = 'position:absolute;visibility:hidden;color:var(--background, #f8fafc)';
-    document.documentElement.appendChild(probe);
-    const c = getComputedStyle(probe).color;
-    probe.remove();
-    const nums = (c.match(/[\d.]+/g) || []).map(Number);
-    if (nums.length < 3) return;
-    const scale = c.startsWith('color(') ? 1 : 255;
-    const [r, g, b] = nums.slice(0, 3).map((v) => v / scale);
-    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    document.documentElement.dataset.theme = lum < 0.5 ? 'dark' : 'light';
+  function detectHostTheme() {
+    const hostBg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+    if (hostBg) {
+      const probe = document.createElement('span');
+      probe.style.cssText = 'position:absolute;visibility:hidden;color:var(--background)';
+      document.documentElement.appendChild(probe);
+      const c = getComputedStyle(probe).color;
+      probe.remove();
+      const nums = (c.match(/[\d.]+/g) || []).map(Number);
+      if (nums.length >= 3) {
+        const scale = c.startsWith('color(') ? 1 : 255;
+        const [r, g, b] = nums.slice(0, 3).map((v) => v / scale);
+        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        return lum < 0.5 ? 'dark' : 'light';
+      }
+    }
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  syncTheme();
-  new MutationObserver(syncTheme).observe(document.documentElement, {
+
+  function applyTheme() {
+    const root = document.documentElement;
+    if (state.themeMode === 'dark' || state.themeMode === 'light') {
+      root.dataset.theme = state.themeMode;
+      root.dataset.themeMode = state.themeMode;
+    } else {
+      delete root.dataset.themeMode;
+      root.dataset.theme = detectHostTheme();
+    }
+    const btn = $('btn-theme');
+    if (btn) {
+      const label = state.themeMode === 'auto' ? 'Auto' : state.themeMode === 'dark' ? 'Dark' : 'Light';
+      btn.textContent = `Theme: ${label}`;
+    }
+  }
+
+  applyTheme();
+  new MutationObserver(applyTheme).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['style'],
   });
+  if (window.matchMedia) {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', applyTheme);
+  }
 
   const esc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (ch) => ({
@@ -428,6 +463,13 @@
     $('path-drawer').classList.add('hidden');
     $('btn-path').setAttribute('aria-expanded', 'false');
     poll(true);
+  });
+
+  $('btn-theme').addEventListener('click', () => {
+    const order = ['auto', 'dark', 'light'];
+    state.themeMode = order[(order.indexOf(state.themeMode) + 1) % order.length];
+    try { localStorage.setItem(THEME_STORAGE_KEY, state.themeMode); } catch {}
+    applyTheme();
   });
 
   $('btn-refresh').addEventListener('click', () => poll(true));

@@ -6,6 +6,12 @@ All personal data stays outside this repository. Your resume, preferences, phone
 
 The default settings target candidates based in India (`Asia/Kolkata`, `IST / UTC+5:30`, INR/USD/EUR compensation floors, remote EOR and contractor checks, `+91` phone handling, and `A4` or `Letter` PDFs). You can change country, timezone, currency, work mode (`remote`, `hybrid`, `onsite`), and job domain during onboarding.
 
+## Extension UI
+
+When installed, `career-autopilot` adds a live side-pane Extension (`sidecar://career-autopilot/dashboard/`) that follows Antigravity's dark and light themes (with a manual `Auto / Dark / Light` toggle) and opens tailored PDFs, logs, and notes directly inside the editor.
+
+![Career Autopilot Extension UI demo showing dark and light themes across Pipeline, Blockers, Leads, Fit Map, and Automations tabs](docs/assets/extension-ui-demo.gif)
+
 ## Requirements
 
 - [Antigravity](https://antigravity.google/docs) with plugin support
