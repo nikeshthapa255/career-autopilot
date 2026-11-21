@@ -7,6 +7,8 @@
   const state = {
     tab: 'pipeline',
     workspace: '',
+    fallbackWorkspace: '',
+    hostWorkspaces: [],
     themeMode: 'auto', // auto | dark | light
     etag: '',
     snap: null,
@@ -14,6 +16,11 @@
     statusFilter: '',
     tierFilter: '',
     showResolved: false,
+    configFormOpen: null, // null = auto (open when 0 active sidecars), boolean = user override
+    configDirty: false,
+    configFocusRole: '',
+    automationNotice: '',
+    automationError: '',
   };
 
   try {
@@ -29,9 +36,9 @@
     state.workspace = urlWs;
   } else {
     try {
-      state.workspace = localStorage.getItem(STORAGE_KEY) || '';
+      state.fallbackWorkspace = localStorage.getItem(STORAGE_KEY) || '';
     } catch {
-      state.workspace = '';
+      state.fallbackWorkspace = '';
     }
   }
 
@@ -91,6 +98,11 @@
 
   const safeHref = (url) => (/^https?:\/\//i.test(String(url || '')) ? url : '');
 
+  function apiFetch(url, options = {}) {
+    const f = window.sidecar?.fetch ? window.sidecar.fetch.bind(window.sidecar) : fetch;
+    return f(url, options);
+  }
+
   function openWorkspaceFile(uri) {
     if (!uri) return;
     if (window.sidecar?.ui?.toggleAuxPane) {
@@ -100,12 +112,26 @@
     window.open(uri, '_blank', 'noopener,noreferrer');
   }
 
+  async function resolveInitialHostWorkspaces() {
+    if (!window.sidecar?.getWorkspaceUris) return [];
+    try {
+      const uris = await Promise.race([
+        window.sidecar.getWorkspaceUris(),
+        new Promise((resolve) => setTimeout(() => resolve([]), 250)),
+      ]);
+      return Array.isArray(uris) ? uris : [];
+    } catch {
+      return [];
+    }
+  }
+
   async function fetchDashboard(force = false) {
     const q = new URLSearchParams();
     if (state.workspace) q.set('workspace', state.workspace);
+    else if (state.fallbackWorkspace) q.set('fallbackWorkspace', state.fallbackWorkspace);
+    if (state.hostWorkspaces.length) q.set('hostWorkspaces', JSON.stringify(state.hostWorkspaces));
     if (!force && state.etag) q.set('etag', state.etag);
-    const f = window.sidecar?.fetch ? window.sidecar.fetch.bind(window.sidecar) : fetch;
-    const res = await f(`/api/dashboard?${q.toString()}`, { method: 'GET' });
+    const res = await apiFetch(`/api/dashboard?${q.toString()}`, { method: 'GET' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   }
@@ -331,12 +357,158 @@
     $('fit-content').innerHTML = `<div class="card-list">${trackCards || '<div class="empty-inline">No tracks parsed in requirements/README.md.</div>'}</div>${prepHtml}`;
   }
 
+  // ---------------------------------------------------------------------------
+  // Automations View & Inline Sidecar Configurator
+  // ---------------------------------------------------------------------------
+
+  function syncPresetToInput(selectEl, inputEl) {
+    if (!selectEl || !inputEl) return;
+    const val = inputEl.value.trim().replace(/\s+/g, ' ');
+    const match = [...selectEl.options].find((o) => o.value !== 'custom' && o.value === val);
+    selectEl.value = match ? match.value : 'custom';
+  }
+
+  function resolveTargetSidecarIds(snap, prefix) {
+    const roles = snap?.automationPanel?.roles || [];
+    const targetIds = {};
+    for (const r of roles) {
+      const sc = r.sidecar;
+      if (r.configured && sc?.id && (!sc.prefix || sc.prefix === prefix)) {
+        targetIds[r.role] = sc.id;
+      }
+    }
+    return targetIds;
+  }
+
+  function updateConfigFormControls() {
+    const findChecked = $('cfg-role-find').checked;
+    const applyChecked = $('cfg-role-apply').checked;
+    $('cfg-scout-group').classList.toggle('hidden', !findChecked);
+    $('cfg-apply-group').classList.toggle('hidden', !applyChecked);
+
+    const prefix = $('cfg-prefix').value.trim();
+    const previewEl = $('cfg-prefix-preview');
+    if (!prefix) {
+      previewEl.textContent = 'Enter a lowercase prefix (e.g. my-jobs)';
+    } else if (!/^[a-z0-9][a-z0-9-]{0,30}$/.test(prefix)) {
+      previewEl.textContent = 'Use lowercase letters, numbers, and hyphens only (start with letter/number).';
+    } else {
+      const existingTargets = resolveTargetSidecarIds(state.snap, prefix);
+      const ids = [];
+      if (findChecked) ids.push(existingTargets['find-jobs'] || `${prefix}-find-jobs`);
+      if (applyChecked) ids.push(existingTargets['auto-apply'] || `${prefix}-auto-apply`);
+      previewEl.textContent = ids.length ? `Sidecars: ${ids.join(', ')}` : 'Select at least one automation above.';
+    }
+
+    const emailMode = $('cfg-email-mode').value;
+    $('cfg-email').classList.toggle('hidden', emailMode !== 'gmail');
+  }
+
+  function populateConfigForm(snap, focusRole = '') {
+    const panel = snap?.automationPanel || {};
+    const defaults = panel.suggestedDefaults || {};
+    const roles = panel.roles || [];
+    const findSidecar = roles.find((r) => r.role === 'find-jobs')?.sidecar || null;
+    const applySidecar = roles.find((r) => r.role === 'auto-apply')?.sidecar || null;
+
+    if (focusRole === 'find-jobs') {
+      $('cfg-role-find').checked = true;
+      $('cfg-role-apply').checked = Boolean(applySidecar);
+    } else if (focusRole === 'auto-apply') {
+      $('cfg-role-find').checked = Boolean(findSidecar);
+      $('cfg-role-apply').checked = true;
+    } else if (findSidecar || applySidecar) {
+      $('cfg-role-find').checked = Boolean(findSidecar);
+      $('cfg-role-apply').checked = Boolean(applySidecar);
+    } else {
+      $('cfg-role-find').checked = true;
+      $('cfg-role-apply').checked = true;
+    }
+
+    const prefix =
+      (focusRole === 'find-jobs' && findSidecar?.prefix) ||
+      (focusRole === 'auto-apply' && applySidecar?.prefix) ||
+      findSidecar?.prefix ||
+      applySidecar?.prefix ||
+      defaults.prefix ||
+      'career';
+    $('cfg-prefix').value = prefix;
+
+    const tz =
+      (focusRole === 'find-jobs' && findSidecar?.tz) ||
+      (focusRole === 'auto-apply' && applySidecar?.tz) ||
+      findSidecar?.tz ||
+      applySidecar?.tz ||
+      defaults.timezone ||
+      'UTC';
+    $('cfg-tz').value = tz;
+
+    $('cfg-scout-cron').value = findSidecar?.cron || defaults.scoutCron || '0 8 * * *';
+    $('cfg-apply-cron').value = applySidecar?.cron || defaults.applyCron || '0 9 * * *';
+    syncPresetToInput($('cfg-scout-preset'), $('cfg-scout-cron'));
+    syncPresetToInput($('cfg-apply-preset'), $('cfg-apply-cron'));
+
+    const existingEmail =
+      applySidecar && applySidecar.emailAccount && applySidecar.emailAccount !== 'none' && applySidecar.emailAccount !== 'configured'
+        ? applySidecar.emailAccount
+        : defaults.emailAccount && defaults.emailAccount !== 'none'
+          ? defaults.emailAccount
+          : '';
+    if (existingEmail) {
+      $('cfg-email-mode').value = 'gmail';
+      $('cfg-email').value = existingEmail;
+    } else {
+      $('cfg-email-mode').value = 'none';
+      $('cfg-email').value = '';
+    }
+
+    $('cfg-form-title').textContent =
+      panel.activeWorkspaceCount > 0
+        ? `Reconfigure automations for ${snap.workspace?.name || 'workspace'}`
+        : `Configure automations for ${snap.workspace?.name || 'workspace'}`;
+
+    $('cfg-cli-fallback').classList.add('hidden');
+    updateConfigFormControls();
+  }
+
+  function shellQuote(val) {
+    return `'${String(val ?? '').replace(/'/g, `'\\''`)}'`;
+  }
+
+  function buildCliCommand(snap) {
+    const wsPath = snap?.workspace?.path || state.workspace || '/path/to/workspace';
+    const installer = snap?.automationPanel?.cliInstallerPath || '';
+    if (!installer) return '';
+    const prefix = $('cfg-prefix').value.trim() || 'career';
+    const tz = $('cfg-tz').value.trim() || 'UTC';
+    const scoutCron = $('cfg-scout-cron').value.trim() || '0 8 * * *';
+    const applyCron = $('cfg-apply-cron').value.trim() || '0 9 * * *';
+    const emailMode = $('cfg-email-mode').value;
+    const emailVal = emailMode === 'gmail' ? $('cfg-email').value.trim() : '';
+
+    const parts = [
+      shellQuote(installer),
+      '--workspace', shellQuote(wsPath),
+      '--prefix', shellQuote(prefix),
+      '--tz', shellQuote(tz),
+      '--scout-cron', shellQuote(scoutCron),
+      '--apply-cron', shellQuote(applyCron),
+    ];
+    if (emailVal) {
+      parts.push('--email', shellQuote(emailVal));
+    } else {
+      parts.push('--no-gmail');
+    }
+    parts.push('--non-interactive');
+    return parts.join(' ');
+  }
+
   function renderAutomations(snap) {
     const p = snap.globalRef?.policy || {};
     $('policy-card').innerHTML = `
       <div class="card-head">
         <h3 class="card-title">Active workspace guardrails</h3>
-        <span class="badge badge-info">${esc(p.timezone || 'Asia/Kolkata')}</span>
+        <span class="badge badge-info">${esc(p.timezone || 'UTC')}</span>
       </div>
       <div class="policy-grid">
         <div class="policy-item"><span class="policy-key">Web apply mode</span><span class="policy-val">${esc(p.webApplyMode || 'hitl_pre_submit')}</span></div>
@@ -346,38 +518,119 @@
       </div>
     `;
 
-    const autos = snap.automations || [];
-    $('count-automations').textContent = String(autos.length);
-    if (!autos.length) {
-      $('automations-list').innerHTML = `
-        <div class="empty-inline">
-          No scheduled Career Autopilot sidecars installed yet.<br>
-          Run <code>automations/install-sidecars.sh --workspace &lt;dir&gt;</code>, then enable them from Antigravity Automations.
-        </div>
-      `;
-      return;
+    const panel = snap.automationPanel || { activeWorkspaceCount: 0, roles: [], otherWorkspaceSidecars: [] };
+    const activeCount = panel.activeWorkspaceCount || 0;
+    $('count-automations').textContent = String(activeCount);
+
+    const formOpen = state.configFormOpen === null ? activeCount === 0 : state.configFormOpen;
+    $('automation-config-card').classList.toggle('hidden', !formOpen);
+    $('btn-toggle-configure').textContent = formOpen ? 'Hide Form' : activeCount > 0 ? 'Reconfigure' : 'Configure';
+    $('btn-copy-cli').classList.toggle('hidden', !panel.cliInstallerPath);
+
+    const noticeEl = $('automation-notice');
+    if (state.automationNotice) {
+      noticeEl.textContent = state.automationNotice;
+      noticeEl.classList.remove('hidden');
+    } else {
+      noticeEl.classList.add('hidden');
     }
 
-    $('automations-list').innerHTML = autos
-      .map((a) => {
-        const stateLabel = a.enabled === true ? 'Enabled' : a.enabled === false ? 'Disabled' : 'Configured';
-        const badgeCls = a.enabled === true ? 'badge-ok' : a.enabled === false ? 'badge-warn' : 'badge-info';
+    const errEl = $('cfg-form-error');
+    if (state.automationError) {
+      errEl.textContent = state.automationError;
+      errEl.classList.remove('hidden');
+    } else {
+      errEl.classList.add('hidden');
+    }
+
+    if (!state.configDirty) {
+      populateConfigForm(snap, state.configFocusRole);
+    }
+
+    const roles = panel.roles || [];
+    const wsName = snap.workspace?.name || 'this workspace';
+    $('automations-list').innerHTML = roles
+      .map((r) => {
+        if (r.configured && r.sidecar) {
+          const s = r.sidecar;
+          const badgeCls = s.statusCode === 'enabled' ? 'badge-ok' : 'badge-warn';
+          const rendererName = s.rendererPath ? s.rendererPath.split(/[\\/]/).pop() : '';
+          const outreachLabel =
+            s.role === 'auto-apply'
+              ? s.emailAccount && s.emailAccount !== 'none'
+                ? `Gmail draft (${s.emailAccount})`
+                : 'Markdown dossier only (no Gmail)'
+              : '';
+          return `
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">${esc(s.displayName || r.title)}</h3>
+                  <p class="card-sub"><code>${esc(s.id)}</code></p>
+                </div>
+                <span class="badge ${badgeCls}">${esc(s.status)}</span>
+              </div>
+              <div class="kv-list">
+                <div class="kv-row"><span class="kv-key">Schedule</span><span><code>${esc(s.cron || s.schedule)}</code>${s.tz ? ` · ${esc(s.tz)}` : ''}</span></div>
+                ${outreachLabel ? `<div class="kv-row"><span class="kv-key">Outreach</span><span>${esc(outreachLabel)}</span></div>` : ''}
+                ${rendererName ? `<div class="kv-row"><span class="kv-key">Renderer</span><span><code>${esc(rendererName)}</code></span></div>` : ''}
+              </div>
+              ${r.additionalCount > 0 ? `<div class="meta-line">Warning: ${r.additionalCount} additional sidecar(s) for this role target this workspace.</div>` : ''}
+              <div class="card-actions">
+                <button type="button" class="icon-btn" data-configure-role="${esc(r.role)}">Reconfigure</button>
+                ${s.configUri ? `<button type="button" class="link-chip" data-file-uri="${esc(s.configUri)}">Inspect sidecar.json</button>` : ''}
+              </div>
+            </article>
+          `;
+        }
+
+        const otherHint =
+          r.otherWorkspaces && r.otherWorkspaces.length
+            ? `Existing config targets another workspace (${r.otherWorkspaces.map((o) => o.workspaceName).join(', ')}).`
+            : `No scheduled sidecar configured for ${wsName} yet.`;
         return `
-          <article class="card">
+          <article class="card card-unconfigured">
             <div class="card-head">
               <div>
-                <h3 class="card-title">${esc(a.displayName)}</h3>
-                <p class="card-sub"><code>${esc(a.id)}</code></p>
+                <h3 class="card-title">${esc(r.title)}</h3>
+                <p class="card-sub">${esc(r.subtitle)}</p>
               </div>
-              <span class="badge ${badgeCls}">${esc(stateLabel)}</span>
+              <span class="badge badge-skipped">Not Configured</span>
             </div>
-            ${a.schedule ? `<div class="meta-line">Schedule: <code>${esc(a.schedule)}</code></div>` : ''}
-            ${a.description ? `<p class="card-notes">${esc(a.description)}</p>` : ''}
-            ${a.configUri ? `<div class="card-actions"><button type="button" class="link-chip" data-file-uri="${esc(a.configUri)}">Inspect sidecar.json</button></div>` : ''}
+            <p class="card-notes">${esc(otherHint)}</p>
+            <div class="card-actions">
+              <button type="button" class="icon-btn" data-configure-role="${esc(r.role)}">Configure</button>
+            </div>
           </article>
         `;
       })
       .join('');
+
+    const others = panel.otherWorkspaceSidecars || [];
+    const otherWrap = $('other-automations-wrap');
+    otherWrap.classList.toggle('hidden', others.length === 0);
+    if (others.length) {
+      $('other-automations-list').innerHTML = others
+        .map(
+          (o) => `
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h3 class="card-title">${esc(o.displayName)}</h3>
+                <p class="card-sub"><code>${esc(o.id)}</code> · ${esc(o.otherWorkspaceName)}</p>
+              </div>
+              <span class="badge badge-info">Other Workspace</span>
+            </div>
+            <div class="kv-list">
+              <div class="kv-row"><span class="kv-key">Target</span><span>${esc(o.otherWorkspacePath)}</span></div>
+              ${o.cron || o.schedule ? `<div class="kv-row"><span class="kv-key">Schedule</span><span><code>${esc(o.cron || o.schedule)}</code>${o.tz ? ` · ${esc(o.tz)}` : ''}</span></div>` : ''}
+            </div>
+            ${o.configUri ? `<div class="card-actions"><button type="button" class="link-chip" data-file-uri="${esc(o.configUri)}">Inspect sidecar.json</button></div>` : ''}
+          </article>
+        `
+        )
+        .join('');
+    }
   }
 
   function renderAll(snap) {
@@ -432,13 +685,33 @@
   });
 
   document.body.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-file-uri]');
-    if (btn) openWorkspaceFile(btn.dataset.fileUri);
+    const fileBtn = e.target.closest('[data-file-uri]');
+    if (fileBtn) {
+      openWorkspaceFile(fileBtn.dataset.fileUri);
+      return;
+    }
+    const cfgBtn = e.target.closest('[data-configure-role]');
+    if (cfgBtn) {
+      const role = cfgBtn.dataset.configureRole;
+      state.configFormOpen = true;
+      state.configDirty = false;
+      state.configFocusRole = role;
+      state.automationError = '';
+      if (state.snap) {
+        renderAutomations(state.snap);
+      }
+      $('cfg-prefix').focus();
+    }
   });
 
   $('ws-select').addEventListener('change', (e) => {
     state.workspace = e.target.value;
     state.etag = '';
+    state.configFormOpen = null;
+    state.configDirty = false;
+    state.configFocusRole = '';
+    state.automationNotice = '';
+    state.automationError = '';
     try { localStorage.setItem(STORAGE_KEY, state.workspace); } catch {}
     poll(true);
   });
@@ -448,7 +721,7 @@
     const open = drawer.classList.toggle('hidden');
     $('btn-path').setAttribute('aria-expanded', String(!open));
     if (!open) {
-      $('ws-input').value = state.workspace || '';
+      $('ws-input').value = state.workspace || state.snap?.workspace?.path || '';
       $('ws-input').focus();
     }
   });
@@ -459,6 +732,11 @@
     if (!val) return;
     state.workspace = val;
     state.etag = '';
+    state.configFormOpen = null;
+    state.configDirty = false;
+    state.configFocusRole = '';
+    state.automationNotice = '';
+    state.automationError = '';
     try { localStorage.setItem(STORAGE_KEY, val); } catch {}
     $('path-drawer').classList.add('hidden');
     $('btn-path').setAttribute('aria-expanded', 'false');
@@ -490,6 +768,183 @@
     if (state.snap) renderLeads(state.snap);
   });
 
-  poll(true);
-  setInterval(() => poll(false), POLL_MS);
+  // Configurator event wiring
+  $('btn-toggle-configure').addEventListener('click', () => {
+    const currentlyOpen = !$('automation-config-card').classList.contains('hidden');
+    state.configFormOpen = !currentlyOpen;
+    state.automationError = '';
+    if (!currentlyOpen) {
+      state.configDirty = false;
+      state.configFocusRole = '';
+    }
+    if (state.snap) renderAutomations(state.snap);
+  });
+
+  $('btn-cancel-config').addEventListener('click', () => {
+    state.configFormOpen = false;
+    state.configDirty = false;
+    state.configFocusRole = '';
+    state.automationError = '';
+    if (state.snap) renderAutomations(state.snap);
+  });
+
+  $('cfg-scout-preset').addEventListener('change', (e) => {
+    if (e.target.value !== 'custom') {
+      $('cfg-scout-cron').value = e.target.value;
+    }
+    state.configDirty = true;
+  });
+
+  $('cfg-apply-preset').addEventListener('change', (e) => {
+    if (e.target.value !== 'custom') {
+      $('cfg-apply-cron').value = e.target.value;
+    }
+    state.configDirty = true;
+  });
+
+  $('cfg-scout-cron').addEventListener('input', () => {
+    syncPresetToInput($('cfg-scout-preset'), $('cfg-scout-cron'));
+    state.configDirty = true;
+  });
+
+  $('cfg-apply-cron').addEventListener('input', () => {
+    syncPresetToInput($('cfg-apply-preset'), $('cfg-apply-cron'));
+    state.configDirty = true;
+  });
+
+  ['cfg-role-find', 'cfg-role-apply', 'cfg-prefix', 'cfg-tz', 'cfg-email-mode', 'cfg-email'].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    const evt = el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input';
+    el.addEventListener(evt, () => {
+      state.configDirty = true;
+      state.automationError = '';
+      $('cfg-form-error').classList.add('hidden');
+      updateConfigFormControls();
+    });
+  });
+
+  $('cfg-email-mode').addEventListener('change', (e) => {
+    if (e.target.value === 'gmail' && !$('cfg-email').value) {
+      const suggested = state.snap?.automationPanel?.suggestedDefaults?.emailAccount;
+      if (suggested && suggested !== 'none') $('cfg-email').value = suggested;
+      $('cfg-email').focus();
+    }
+  });
+
+  $('btn-copy-cli').addEventListener('click', async () => {
+    const cmd = buildCliCommand(state.snap);
+    if (!cmd) return;
+    const btn = $('btn-copy-cli');
+    const fallback = $('cfg-cli-fallback');
+    let copied = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(cmd);
+        copied = true;
+      }
+    } catch {
+      copied = false;
+    }
+    if (!copied) {
+      const ta = document.createElement('textarea');
+      ta.value = cmd;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        copied = document.execCommand('copy');
+      } catch {
+        copied = false;
+      }
+      ta.remove();
+    }
+    fallback.textContent = cmd;
+    fallback.classList.remove('hidden');
+    if (copied) {
+      btn.textContent = 'Copied CLI Command';
+      setTimeout(() => { btn.textContent = 'Copy CLI Install Command'; }, 2000);
+    }
+  });
+
+  $('automation-config-card').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const wsPath = state.snap?.workspace?.path || state.workspace;
+    const roles = [];
+    if ($('cfg-role-find').checked) roles.push('find-jobs');
+    if ($('cfg-role-apply').checked) roles.push('auto-apply');
+
+    const prefix = $('cfg-prefix').value.trim().toLowerCase();
+    const existingTargets = resolveTargetSidecarIds(state.snap, prefix);
+    const targetIds = {};
+    for (const role of roles) {
+      if (existingTargets[role]) targetIds[role] = existingTargets[role];
+    }
+
+    const payload = {
+      workspace: wsPath,
+      prefix,
+      roles,
+      timezone: $('cfg-tz').value.trim(),
+      scoutCron: $('cfg-scout-cron').value.trim(),
+      applyCron: $('cfg-apply-cron').value.trim(),
+      emailAccount: $('cfg-email-mode').value === 'gmail' ? $('cfg-email').value.trim() : 'none',
+    };
+    if (Object.keys(targetIds).length) {
+      payload.targetIds = targetIds;
+    }
+
+    const saveBtn = $('btn-save-config');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    state.automationError = '';
+
+    try {
+      const res = await apiFetch('/api/automations/configure', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        state.automationError = data?.error || `Failed with HTTP ${res.status}`;
+        if (state.snap) renderAutomations(state.snap);
+        return;
+      }
+
+      const names = (data.written || []).map((w) => w.displayName).join(' and ');
+      state.configDirty = false;
+      state.configFormOpen = false;
+      state.configFocusRole = '';
+      state.automationError = '';
+      state.automationNotice = `Saved ${names}. Enable the new sidecar(s) in Antigravity Extensions / Sidecars to run them on schedule.`;
+      if (data.snapshot) {
+        state.snap = data.snapshot;
+        state.etag = data.snapshot.etag || '';
+        renderAll(data.snapshot);
+      } else {
+        await poll(true);
+      }
+    } catch (err) {
+      state.automationError = err?.message || 'Unable to save sidecar configs.';
+      if (state.snap) renderAutomations(state.snap);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Sidecar Configs';
+    }
+  });
+
+  if (window.sidecar?.onWorkspaceChange) {
+    window.sidecar.onWorkspaceChange((uris) => {
+      state.hostWorkspaces = Array.isArray(uris) ? uris : [];
+      state.etag = '';
+      poll(true);
+    });
+  }
+
+  (async () => {
+    state.hostWorkspaces = await resolveInitialHostWorkspaces();
+    await poll(true);
+    setInterval(() => poll(false), POLL_MS);
+  })();
 })();

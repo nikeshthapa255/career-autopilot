@@ -114,8 +114,115 @@
 
       <section id="tab-automations" class="tab-panel" role="tabpanel" aria-labelledby="tabbtn-automations">
         <div id="policy-card" class="card"></div>
-        <h2 class="subheading">Scheduled sidecars</h2>
+
+        <div class="section-row automations-header">
+          <h2 class="subheading">Scheduled automations</h2>
+          <button id="btn-toggle-configure" type="button" class="icon-btn">Configure</button>
+        </div>
+
+        <div id="automation-notice" class="banner banner-ok hidden" role="status"></div>
+
+        <form id="automation-config-card" class="card config-card hidden" novalidate>
+          <div class="card-head">
+            <div>
+              <h3 id="cfg-form-title" class="card-title">Configure scheduled automations</h3>
+              <p class="card-sub">Writes disabled sidecar configs for the active workspace (never auto-enables).</p>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <span class="field-label">Automations</span>
+            <div class="check-group">
+              <label class="check-item">
+                <input id="cfg-role-find" type="checkbox" checked>
+                <span><strong>Find New Jobs</strong> <span class="muted">(Phase 1 scout)</span></span>
+              </label>
+              <label class="check-item">
+                <input id="cfg-role-apply" type="checkbox" checked>
+                <span><strong>Apply &amp; Draft Pipeline</strong> <span class="muted">(Phase 2 PDF + ATS + drafts)</span></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label" for="cfg-prefix">Sidecar name prefix</label>
+              <input id="cfg-prefix" type="text" class="text-input mono-input" placeholder="my-jobs" maxlength="31" autocomplete="off">
+              <span id="cfg-prefix-preview" class="field-hint"></span>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="cfg-tz">Timezone (<code>CRON_TZ</code>)</label>
+              <input id="cfg-tz" type="text" class="text-input mono-input" list="tz-suggestions" placeholder="Asia/Kolkata" autocomplete="off">
+              <datalist id="tz-suggestions">
+                <option value="Asia/Kolkata"></option>
+                <option value="UTC"></option>
+                <option value="America/New_York"></option>
+                <option value="America/Los_Angeles"></option>
+                <option value="Europe/London"></option>
+                <option value="Europe/Berlin"></option>
+                <option value="Asia/Singapore"></option>
+              </datalist>
+            </div>
+          </div>
+
+          <div id="cfg-scout-group" class="field">
+            <label class="field-label" for="cfg-scout-preset">Find New Jobs schedule</label>
+            <div class="field-row">
+              <select id="cfg-scout-preset" class="select-sm" aria-label="Find New Jobs schedule preset">
+                <option value="0 */6 * * *">Every 6 hours</option>
+                <option value="0 9,18 * * *">Twice daily (09:00 &amp; 18:00)</option>
+                <option value="0 8 * * *">Daily at 08:00</option>
+                <option value="0 9 * * *">Daily at 09:00</option>
+                <option value="0 9 * * 1-5">Weekdays at 09:00</option>
+                <option value="custom">Custom cron</option>
+              </select>
+              <input id="cfg-scout-cron" type="text" class="text-input mono-input" placeholder="0 8 * * *" aria-label="Find New Jobs 5-field cron" autocomplete="off">
+            </div>
+          </div>
+
+          <div id="cfg-apply-group" class="field">
+            <label class="field-label" for="cfg-apply-preset">Apply &amp; Draft schedule</label>
+            <div class="field-row">
+              <select id="cfg-apply-preset" class="select-sm" aria-label="Apply &amp; Draft schedule preset">
+                <option value="30 */6 * * *">Every 6 hours (:30)</option>
+                <option value="30 9,18 * * *">Twice daily (09:30 &amp; 18:30)</option>
+                <option value="0 9 * * *">Daily at 09:00</option>
+                <option value="30 9 * * *">Daily at 09:30</option>
+                <option value="30 9 * * 1-5">Weekdays at 09:30</option>
+                <option value="custom">Custom cron</option>
+              </select>
+              <input id="cfg-apply-cron" type="text" class="text-input mono-input" placeholder="0 9 * * *" aria-label="Apply &amp; Draft 5-field cron" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="cfg-email-mode">Gmail account for drafts (optional)</label>
+            <div class="field-row">
+              <select id="cfg-email-mode" class="select-sm" aria-label="Outreach mode">
+                <option value="none">None (Markdown dossiers only)</option>
+                <option value="gmail">Connected Gmail account</option>
+              </select>
+              <input id="cfg-email" type="email" class="text-input hidden" placeholder="candidate@example.com" aria-label="Gmail account address" autocomplete="off">
+            </div>
+          </div>
+
+          <div id="cfg-form-error" class="banner banner-error hidden" role="alert"></div>
+
+          <div class="card-actions form-actions">
+            <button id="btn-save-config" type="submit" class="primary-btn">Save Sidecar Configs</button>
+            <button id="btn-copy-cli" type="button" class="icon-btn">Copy CLI Install Command</button>
+            <button id="btn-cancel-config" type="button" class="icon-btn">Cancel</button>
+          </div>
+          <pre id="cfg-cli-fallback" class="code-block hidden"></pre>
+        </form>
+
         <div id="automations-list" class="card-list"></div>
+
+        <div id="other-automations-wrap" class="hidden">
+          <h2 class="subheading">Other workspaces</h2>
+          <div id="other-automations-list" class="card-list"></div>
+        </div>
       </section>
     </main>
   </div>
