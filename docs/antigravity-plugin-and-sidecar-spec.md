@@ -33,6 +33,10 @@ plugin/
     │   └── references/
     │       ├── ats-api-endpoints.md
     │       └── screening-gates.md
+    ├── career-autopilot-fit/           # Optional: role-fit mind-maps, 80%+ rubric & prep queue
+    │   ├── SKILL.md
+    │   └── references/
+    │       └── track-guide-template.md
     ├── career-autopilot-apply/         # Phase 2 tailoring, browser apply, & outreach
     │   ├── SKILL.md
     │   ├── references/
@@ -86,7 +90,7 @@ Agent markdown files use YAML frontmatter specifying `name`, `description`, `too
 - `career-autopilot-worker.md`: Phase 2 isolated worker bound to one `applications/<company-slug>/` folder; reads `GLOBAL_REFERENCE.md` and `master_profile.md` read-only and never edits `applications/tracker.md` or `GLOBAL_REFERENCE.md` concurrently.
 
 ### 3.3 Skills (`plugin/skills/*/SKILL.md`)
-- Every `SKILL.md` begins with YAML frontmatter containing lowercase hyphenated `name` (`career-autopilot-onboard`, `career-autopilot-scout`, `career-autopilot-apply`, `clear-natural-english`) and third-person `description` triggers.
+- Every `SKILL.md` begins with YAML frontmatter containing lowercase hyphenated `name` (`career-autopilot-onboard`, `career-autopilot-scout`, `career-autopilot-fit`, `career-autopilot-apply`, `clear-natural-english`) and third-person `description` triggers.
 - Bulk runbooks, endpoint guides, HTML templates, and helper scripts reside in `./references/`, `./resources/`, and `./scripts/` linked via relative markdown links so Antigravity loads only metadata until a skill activates (progressive disclosure).
 
 ---

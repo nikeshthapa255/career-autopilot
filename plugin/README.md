@@ -9,6 +9,7 @@ The plugin keeps all logic, prompts, templates, and safety checks inside `career
 - **Skills**
   - `career-autopilot-onboard`: Phase 0 intake from PDF, DOCX, Markdown, or plain text resumes, extracting a locked `Verified Quantitative Baseline`, running a structured preference interview, scaffolding the private workspace via `init-workspace.sh`, and verifying a baseline 1-page PDF.
   - `career-autopilot-scout`: Phase 1 multi-source discovery across Ashby, Greenhouse, Lever, YC, HN Algolia, Notion, Breezy, and generic public (`Mode A`) or authenticated (`Mode B` `--autoConnect`) portals with deduplication, tiering, YOE/FX checks, anti-LLM checks, and prompt-injection/honeypot screening.
+  - `career-autopilot-fit` *(optional)*: Builds `<workspace>/requirements/README.md` and per-track guides with a Mermaid cross-role mind-map, dual-track eligibility rubric (`>= 80%` verified skill match or wanted specialty track), instant-skip mismatch filters, and a focused interview prep queue.
   - `career-autopilot-apply`: Phase 2 execution across Workflow 1 (grounded tailoring and cross-platform headless Chrome/Chromium/Edge 1-page PDF rendering), Workflow 2 (serialized `browser_sandbox/uploads/` staging and guardrailed form filling), and Workflow 3 (verified public email outreach with strict HITL approval).
   - `clear-natural-english`: Prose clarity and anti-AI-slop editing standard (`SKILL.md` + `references/patterns-and-examples.md`) applied to tailored resume bullets, ATS essay responses, cold emails, and follow-ups.
 - **Subagents**

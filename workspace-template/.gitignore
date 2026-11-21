@@ -10,9 +10,11 @@ resume/*.docx
 resume/*.doc
 resume/*.txt
 
-# All application logs, leads, cold-email dossiers, and tailored resume packets
+# All application logs, leads, cold-email dossiers, role-fit mind-maps, and tailored resume packets
 applications/*
 !applications/*.template
+requirements/*
+!requirements/*.template
 *.pdf
 
 # Local overrides, environment files, temporary staging, and OS artifacts

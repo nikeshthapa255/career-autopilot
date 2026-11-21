@@ -374,6 +374,10 @@ Job application automation/
 │       │   └── references/
 │       │       ├── ats-api-endpoints.md          # Ashby GraphQL, Greenhouse boards-api, Lever, HN, YC, generic portals
 │       │       └── screening-gates.md            # Prompt-injection, honeypot, localization, anti-LLM honesty checks
+│       ├── career-autopilot-fit/
+│       │   ├── SKILL.md                          # Optional: role requirements mind-map, 80%+ rubric & prep queue
+│       │   └── references/
+│       │       └── track-guide-template.md       # Per-track expectations, strengths, honest gaps & topics template
 │       ├── career-autopilot-apply/
 │       │   ├── SKILL.md                          # Phase 2 coordinator: Workflows 1/2/3 + <=32 worker orchestration
 │       │   ├── references/
@@ -399,6 +403,8 @@ Job application automation/
 │   └── applications/
 │       ├── tracker.md.template                   # Master pipeline status table & legend
 │       └── new_leads.md.template                 # Verified Tier A / B1 / B2 / Pending / Excluded discovery log
+│   └── requirements/
+│       └── README.md.template                    # Optional: role-fit mind-map, 4-gate triage & high-ROI prep index
 │
 ├── automations/                                  # Scheduled Sidecar templates & idempotent installer
 │   ├── README.md                                 # Setup guide (`CRON_TZ`, `access_grants`, dashboard enablement)

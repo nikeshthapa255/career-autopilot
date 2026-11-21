@@ -188,6 +188,9 @@ copy_safe "$TEMPLATE_DIR/GLOBAL_REFERENCE.md.template" "$TARGET_ABS/GLOBAL_REFER
 copy_safe "$TEMPLATE_DIR/resume/master_profile.md.template" "$TARGET_ABS/resume/master_profile.md.template" "copy"
 copy_safe "$TEMPLATE_DIR/applications/tracker.md.template" "$TARGET_ABS/applications/tracker.md.template" "copy"
 copy_safe "$TEMPLATE_DIR/applications/new_leads.md.template" "$TARGET_ABS/applications/new_leads.md.template" "copy"
+if [ -f "$TEMPLATE_DIR/requirements/README.md.template" ]; then
+  copy_safe "$TEMPLATE_DIR/requirements/README.md.template" "$TARGET_ABS/requirements/README.md.template" "copy"
+fi
 
 # 2. Seed initial working Markdown files when absent (never overwriting populated files without --force)
 if [ "$TEMPLATES_ONLY" -ne 1 ]; then

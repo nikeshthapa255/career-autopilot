@@ -19,7 +19,8 @@ The plugin splits the job search into three phases, backed by an editing skill (
 
 1. **Onboard (`career-autopilot-onboard`):** Extracts facts, dates, and verified metrics from your `.pdf`, `.docx`, or `.md` resume into `resume/master_profile.md`, interviews you to populate `GLOBAL_REFERENCE.md`, and renders a 1-page baseline PDF.
 2. **Scout (`career-autopilot-scout`):** Searches Ashby, Greenhouse, Lever, YC Jobs, Hacker News Who is Hiring, Notion, Breezy, and custom portals (`Mode A` public DOM inspection or `Mode B` authenticated Chrome `--autoConnect`). Deduplicates against your tracker, checks compensation and years-of-experience fit, flags location-adjusted pay, and tiers leads into `applications/new_leads.md` and `applications/tracker.md`.
-3. **Apply (`career-autopilot-apply`):** Fans out up to 32 isolated workers (one per company folder) to tailor 1-page resumes and map form fields, runs serialized browser file uploads from the root coordinator, and prepares cold-email drafts when a public contact email is verified.
+3. **Fit rubric and prep map (`career-autopilot-fit`, optional):** Generates `requirements/README.md` and per-track guides with a Mermaid mind-map, dual-track eligibility gate (`>= 80%` verified skill match or wanted specialty track), instant-skip mismatch filters, and a focused interview prep queue. When present, `career-autopilot-scout` and `career-autopilot-apply` enforce its triage gate before queuing or tailoring.
+4. **Apply (`career-autopilot-apply`):** Fans out up to 32 isolated workers (one per company folder) to tailor 1-page resumes and map form fields, runs serialized browser file uploads from the root coordinator, and prepares cold-email drafts when a public contact email is verified.
 
 ## Safety rules
 
@@ -80,8 +81,8 @@ See [automations/README.md](automations/README.md) for custom schedules, Gmail v
 
 | Path | Contents |
 | :--- | :--- |
-| [plugin/](plugin/README.md) | Distributable Antigravity plugin (`plugin.json`, root `hooks.json`, `rules/AGENTS.md`, `agents/`, and 4 skills: `career-autopilot-onboard`, `career-autopilot-scout`, `career-autopilot-apply`, `clear-natural-english`) |
-| [workspace-template/](workspace-template/GLOBAL_REFERENCE.md.template) | Starter files for a private candidate workspace (`.gitignore`, `GLOBAL_REFERENCE.md.template`, `master_profile.md.template`, `tracker.md.template`, `new_leads.md.template`) |
+| [plugin/](plugin/README.md) | Distributable Antigravity plugin (`plugin.json`, root `hooks.json`, `rules/AGENTS.md`, `agents/`, and 5 skills: `career-autopilot-onboard`, `career-autopilot-scout`, `career-autopilot-fit` [optional], `career-autopilot-apply`, `clear-natural-english`) |
+| [workspace-template/](workspace-template/GLOBAL_REFERENCE.md.template) | Starter files for a private candidate workspace (`.gitignore`, `GLOBAL_REFERENCE.md.template`, `master_profile.md.template`, `tracker.md.template`, `new_leads.md.template`, optional `requirements/README.md.template`) |
 | [automations/](automations/README.md) | Parameterized scheduled sidecar templates (`find-new-jobs`, `auto-apply`) and `install-sidecars.sh` |
 | [docs/](docs/framework-architecture.md) | Architecture and platform guides: [framework architecture](docs/framework-architecture.md), [plugin and sidecar spec](docs/antigravity-plugin-and-sidecar-spec.md), [browser architecture](docs/browser-extension-architecture.md), and [onboarding guide](docs/onboarding-guide.md) |
 | [tests/](tests/test_zero_pii_scan.sh) | Zero-PII scanner, PDF renderer gate tests, JSON validators, and synthetic HTML fixtures |

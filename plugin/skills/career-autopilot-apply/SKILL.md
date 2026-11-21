@@ -16,7 +16,7 @@ Executes grounded, policy-enforced job applications from the user's private work
 
 Before cloning a resume template, filling a form, or drafting outreach, inspect `GLOBAL_REFERENCE.md` and `resume/master_profile.md`:
 
-1. **Eligibility Check:** Confirm the target role is approved (`Tier A`, `Tier B1`, or user-selected `Tier B2`), satisfies `target_geos`, `timezone`, `comp_floor`, and `seniority_window`, and triggers no `excluded_role_signals`. If disqualified, stop and log `Skipped — Role Eligibility Mismatch` in `applications/<company-slug>/application_state.md`.
+1. **Eligibility Check:** Confirm the target role is approved (`Tier A`, `Tier B1`, or user-selected `Tier B2`), satisfies `target_geos`, `timezone`, `comp_floor`, and `seniority_window`, and triggers no `excluded_role_signals`. If the optional `<workspace>/requirements/README.md` fit rubric (`career-autopilot-fit`) exists, also confirm the role passes Track 1 (`>= 80%` verified match) or Track 2 (wanted specialty) and does not require any `never_claim_skills`. If disqualified, stop and log `Skipped — Role Eligibility Mismatch` in `applications/<company-slug>/application_state.md`.
 2. **Baseline Grounding:** Load the locked `Verified Quantitative Baseline` block in `resume/master_profile.md`. Never alter employers, job titles, full-time vs. internship dates, or verified metrics.
 
 ## Workflows
