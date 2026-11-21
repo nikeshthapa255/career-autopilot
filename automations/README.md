@@ -4,13 +4,13 @@ Parameterized Antigravity **Scheduled Sidecar** (`"builtin": "schedule"`) templa
 
 ## Included Templates
 
-1. **`find-new-jobs.sidecar.json.template`** — *Career Autopilot — Find New Jobs*
-   - **Installed target:** `~/.gemini/config/sidecars/<prefix>-find-jobs/sidecar.json` (default prefix: `career-autopilot`)
+1. **`find-new-jobs.sidecar.json.template`** — *`<FirstName> — Find New Jobs`*
+   - **Installed target:** `~/.gemini/config/sidecars/<firstname>-find-jobs/sidecar.json` (auto-detected from `--first-name`, `<workspace>/GLOBAL_REFERENCE.md` `full_name`, `git config user.name`, or OS user; overridable with `--prefix`, fallback `career-autopilot`)
    - **What it runs:** Invokes `career-autopilot-scout` against your private workspace, audits Ashby (`posting-api` + `ApiJobPosting`), Greenhouse (`boards-api` + embed), Lever, YC Jobs, HN *Who is Hiring*, and configured boards, screens for hidden geo/visa gates, localization risk, anti-LLM checks, prompt injections, and honeypots, deduplicates against `applications/tracker.md` and `applications/new_leads.md`, and queues verified `Tier A` / `Tier B1` leads.
    - **Permissions:** Scoped strictly to `read_file`/`write_file` on `{{WORKSPACE_PATH}}`, `command(curl)`, and explicit ATS `read_url(<domain>)` grants (no wildcards).
 
-2. **`auto-apply.sidecar.json.template`** — *Career Autopilot — Apply & Draft Pipeline*
-   - **Installed target:** `~/.gemini/config/sidecars/<prefix>-auto-apply/sidecar.json`
+2. **`auto-apply.sidecar.json.template`** — *`<FirstName> — Apply & Draft Pipeline`*
+   - **Installed target:** `~/.gemini/config/sidecars/<firstname>-auto-apply/sidecar.json`
    - **What it runs:** Invokes `career-autopilot-apply` on queued leads, fans out up to 32 isolated per-application workers (`applications/<company-slug>/`), renders strict 1-page PDFs via `{{SCRIPT_RENDERER_PATH}}` (`--strict-1-page`), executes Workflow 2 respecting `execution_and_safety_policy.web_apply_mode` (`hitl_pre_submit` by default; `yolo_with_guardrails` only if opted in), and prepares strict HITL cold-email drafts (`AGY_UNATTENDED=1` draft-only Gmail or copy-paste `cold_email.md` dossiers).
    - **Safety guarantees:** Never holds `gmail mutate send*`, `send-draft`, `send-with-attachment`, `reply`, or `forward` permissions, never uses wildcard grants (`command(*)`, `read_file(*)`, etc.), and stops unconditionally on CAPTCHAs, email human-verification security codes, login/MFA gates, anti-LLM honesty prompts, and shady legal clauses.
 
@@ -51,6 +51,7 @@ To preview rendered JSON files in a temporary directory without touching `~/.gem
 | `{{CRON_TZ}}` | `Asia/Kolkata` | IANA timezone placed in `CRON_TZ=<zone>` at `args[0]` |
 | `{{CRON_SCHEDULE}}` | `0 8 * * *` / `0 9 * * *` | Standard 5-field cron expression (`minute hour day-of-month month day-of-week`) |
 | `{{EMAIL_ACCOUNT}}` | `candidate@example.com` or `none` | Passed to `AGY_ACCOUNT` for draft-only `gmail mutate create-draft` |
+| `{{DISPLAY_PREFIX}}` | `<FirstName>` (e.g., `Alex` or `Career Autopilot`) | Title-cased prefix shown in the Automations dashboard `display_name` |
 
 ### Common Schedules (`Asia/Kolkata` / IST)
 
@@ -65,5 +66,5 @@ To preview rendered JSON files in a temporary directory without touching `~/.gem
 
 1. Run an interactive test run of discovery and apply in Antigravity so global permissions and `render_resume_pdf.sh` execution are verified.
 2. Open the **Automations** dashboard (`[Open Automations Dashboard](sidecar://dashboard)`) and manually enable:
-   - **`Career Autopilot — Find New Jobs`** (`<prefix>-find-jobs`)
-   - **`Career Autopilot — Apply & Draft Pipeline`** (`<prefix>-auto-apply`)
+   - **`<FirstName> — Find New Jobs`** (`<firstname>-find-jobs`)
+   - **`<FirstName> — Apply & Draft Pipeline`** (`<firstname>-auto-apply`)

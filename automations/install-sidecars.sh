@@ -15,7 +15,7 @@ APPLY_TEMPLATE="$SCRIPT_DIR/auto-apply.sidecar.json.template"
 DEFAULT_TZ="Asia/Kolkata"
 DEFAULT_SCOUT_CRON="0 8 * * *"
 DEFAULT_APPLY_CRON="0 9 * * *"
-DEFAULT_PREFIX="career-autopilot"
+FALLBACK_PREFIX="career-autopilot"
 
 WORKSPACE_PATH=""
 RENDERER_PATH=""
@@ -24,7 +24,9 @@ SCOUT_CRON="$DEFAULT_SCOUT_CRON"
 APPLY_CRON="$DEFAULT_APPLY_CRON"
 EMAIL_ACCOUNT=""
 NO_GMAIL=0
-PREFIX="$DEFAULT_PREFIX"
+FIRST_NAME=""
+PREFIX=""
+EXPLICIT_PREFIX=0
 DRY_RUN_DIR=""
 NON_INTERACTIVE=0
 EXPLICIT_CRON=0
@@ -38,6 +40,10 @@ Render parameterized Career Autopilot scheduled sidecar configurations into
 ~/.gemini/config/sidecars/<prefix>-find-jobs/sidecar.json and
 ~/.gemini/config/sidecars/<prefix>-auto-apply/sidecar.json.
 
+By default, <prefix> is derived from the user's lowercase first name
+(resolved from --first-name, <workspace>/GLOBAL_REFERENCE.md full_name,
+git config user.name, or the OS account name, falling back to career-autopilot).
+
 Options:
   --workspace <dir>         Absolute or relative path to your private job-search workspace
   --renderer <path>         Path to render_resume_pdf.sh (auto-detected if omitted)
@@ -47,7 +53,8 @@ Options:
   --cron <5-field>          Set the same 5-field cron schedule for both sidecars
   --email <address|none>    Connected Gmail account for AGY_ACCOUNT, or "none" (no Gmail)
   --no-gmail                Disable Gmail CLI grants (copy-paste Markdown dossiers only)
-  --prefix <kebab-prefix>   Sidecar directory ID prefix (default: career-autopilot)
+  --first-name <name>       User first name used as sidecar prefix & display prefix
+  --prefix <kebab-prefix>   Explicit sidecar directory ID prefix (overrides --first-name)
   --dry-run <tmp_dir>       Write rendered files into <tmp_dir> instead of ~/.gemini/config/sidecars
   -y, --non-interactive     Use flags/defaults without prompting interactively
   -h, --help                Show this help message
@@ -178,6 +185,85 @@ validate_tz_name() {
   fi
 }
 
+sanitize_firstname_slug() {
+  local raw="$1"
+  local first
+  first="$(printf '%s' "$raw" | awk '{print $1}')"
+  printf '%s' "$first" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
+}
+
+title_case_prefix() {
+  local slug="$1"
+  printf '%s' "$slug" | awk -F'-' '{
+    out = ""
+    for (i = 1; i <= NF; i++) {
+      if ($i == "") continue
+      word = toupper(substr($i, 1, 1)) substr($i, 2)
+      out = (out == "" ? word : out " " word)
+    }
+    printf "%s", out
+  }'
+}
+
+detect_default_first_name() {
+  local ws="$1"
+  local candidate=""
+  local slug=""
+
+  if [ -n "$ws" ] && [ -f "$ws/GLOBAL_REFERENCE.md" ]; then
+    candidate="$(awk '
+      /^[[:space:]]*full_name:[[:space:]]*/ {
+        val = $0
+        sub(/^[[:space:]]*full_name:[[:space:]]*/, "", val)
+        sub(/[[:space:]]*#.*$/, "", val)
+        gsub(/^["'\''[:space:]]+|["'\''[:space:]]+$/, "", val)
+        print val
+        exit
+      }
+    ' "$ws/GLOBAL_REFERENCE.md" 2>/dev/null || true)"
+    case "$candidate" in
+      ""|*"<"*|*"{{"*|*"[TODO:"*|*"[USER INPUT"*)
+        candidate=""
+        ;;
+    esac
+    slug="$(sanitize_firstname_slug "$candidate")"
+    if [ -n "$slug" ]; then
+      printf '%s\n' "$slug"
+      return 0
+    fi
+  fi
+
+  if command -v git >/dev/null 2>&1; then
+    candidate="$(git config --get user.name 2>/dev/null || true)"
+    slug="$(sanitize_firstname_slug "$candidate")"
+    if [ -n "$slug" ]; then
+      printf '%s\n' "$slug"
+      return 0
+    fi
+  fi
+
+  if command -v id >/dev/null 2>&1; then
+    candidate="$(id -F 2>/dev/null || true)"
+    slug="$(sanitize_firstname_slug "$candidate")"
+    if [ -n "$slug" ]; then
+      printf '%s\n' "$slug"
+      return 0
+    fi
+  fi
+
+  if [ -n "${USER:-}" ]; then
+    slug="$(sanitize_firstname_slug "$USER")"
+    if [ -n "$slug" ]; then
+      printf '%s\n' "$slug"
+      return 0
+    fi
+  fi
+
+  printf '%s\n' "$FALLBACK_PREFIX"
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --workspace)
@@ -258,13 +344,24 @@ while [ "$#" -gt 0 ]; do
       EMAIL_ACCOUNT="none"
       shift
       ;;
+    --first-name)
+      [ "$#" -ge 2 ] || die "--first-name requires a name"
+      FIRST_NAME="$2"
+      shift 2
+      ;;
+    --first-name=*)
+      FIRST_NAME="${1#*=}"
+      shift
+      ;;
     --prefix)
       [ "$#" -ge 2 ] || die "--prefix requires a kebab-case prefix"
       PREFIX="$2"
+      EXPLICIT_PREFIX=1
       shift 2
       ;;
     --prefix=*)
       PREFIX="${1#*=}"
+      EXPLICIT_PREFIX=1
       shift
       ;;
     --dry-run)
@@ -327,8 +424,18 @@ if [ "$NON_INTERACTIVE" -eq 0 ] && [ -z "$DRY_RUN_DIR" ] && [ -t 0 ] && [ -z "$W
   read -r -p "Path to render_resume_pdf.sh [$RENDERER_PATH]: " input_renderer
   RENDERER_PATH="${input_renderer:-$RENDERER_PATH}"
 
-  read -r -p "Sidecar folder prefix [$PREFIX]: " input_prefix
-  PREFIX="${input_prefix:-$PREFIX}"
+  if [ "$EXPLICIT_PREFIX" -eq 0 ]; then
+    if [ -n "$FIRST_NAME" ]; then
+      PREFIX="$(sanitize_firstname_slug "$FIRST_NAME")"
+    else
+      PREFIX="$(detect_default_first_name "$WORKSPACE_PATH")"
+    fi
+  fi
+  read -r -p "Sidecar folder prefix (first name) [$PREFIX]: " input_prefix
+  if [ -n "$input_prefix" ]; then
+    PREFIX="$(sanitize_firstname_slug "$input_prefix")"
+    EXPLICIT_PREFIX=1
+  fi
 fi
 
 if [ -z "$WORKSPACE_PATH" ]; then
@@ -341,6 +448,16 @@ fi
 
 WORKSPACE_PATH="$(resolve_path_clean "$WORKSPACE_PATH")"
 RENDERER_PATH="$(resolve_path_clean "$RENDERER_PATH")"
+
+if [ "$EXPLICIT_PREFIX" -eq 0 ]; then
+  if [ -n "$FIRST_NAME" ]; then
+    PREFIX="$(sanitize_firstname_slug "$FIRST_NAME")"
+  else
+    PREFIX="$(detect_default_first_name "$WORKSPACE_PATH")"
+  fi
+fi
+[ -n "$PREFIX" ] || PREFIX="$FALLBACK_PREFIX"
+DISPLAY_PREFIX="$(title_case_prefix "$PREFIX")"
 
 if [ "$EXPLICIT_TZ" -eq 0 ]; then
   detected_tz="$(extract_tz_from_cron "$SCOUT_CRON")"
@@ -398,13 +515,16 @@ VAL_APPLY_CRON="$(json_escape)"
 export RAW_VAL="$EMAIL_ACCOUNT"
 VAL_EMAIL_ACCOUNT="$(json_escape)"
 
+export RAW_VAL="$DISPLAY_PREFIX"
+VAL_DISPLAY_PREFIX="$(json_escape)"
+
 render_template() {
   local template_file="$1"
   local out_file="$2"
   local cron_val="$3"
   local strip_gmail="$4"
 
-  export VAL_WORKSPACE_PATH VAL_WORKSPACE_URI_PATH VAL_RENDERER_PATH VAL_CRON_TZ VAL_EMAIL_ACCOUNT
+  export VAL_WORKSPACE_PATH VAL_WORKSPACE_URI_PATH VAL_RENDERER_PATH VAL_CRON_TZ VAL_EMAIL_ACCOUNT VAL_DISPLAY_PREFIX
   export VAL_CRON_SCHEDULE="$cron_val"
   export STRIP_GMAIL="$strip_gmail"
 
@@ -428,6 +548,7 @@ render_template() {
       line = replace_all(line, "{{CRON_TZ}}", ENVIRON["VAL_CRON_TZ"])
       line = replace_all(line, "{{CRON_SCHEDULE}}", ENVIRON["VAL_CRON_SCHEDULE"])
       line = replace_all(line, "{{EMAIL_ACCOUNT}}", ENVIRON["VAL_EMAIL_ACCOUNT"])
+      line = replace_all(line, "{{DISPLAY_PREFIX}}", ENVIRON["VAL_DISPLAY_PREFIX"])
       print line
     }
   ' "$template_file" > "$out_file"
@@ -468,9 +589,10 @@ render_template "$APPLY_TEMPLATE" "$APPLY_OUT_FILE" "$VAL_APPLY_CRON" "$NO_GMAIL
 validate_rendered_json "$APPLY_OUT_FILE"
 
 printf '\nRendered scheduled sidecar configs successfully:\n'
-printf '  1. Career Autopilot — Find New Jobs (%s-find-jobs)\n     -> %s\n' "$PREFIX" "$FIND_OUT_FILE"
-printf '  2. Career Autopilot — Apply & Draft Pipeline (%s-auto-apply)\n     -> %s\n' "$PREFIX" "$APPLY_OUT_FILE"
+printf '  1. %s — Find New Jobs (%s-find-jobs)\n     -> %s\n' "$DISPLAY_PREFIX" "$PREFIX" "$FIND_OUT_FILE"
+printf '  2. %s — Apply & Draft Pipeline (%s-auto-apply)\n     -> %s\n' "$DISPLAY_PREFIX" "$PREFIX" "$APPLY_OUT_FILE"
 printf '\nSettings applied:\n'
+printf '  - Prefix:    %s (display: %s)\n' "$PREFIX" "$DISPLAY_PREFIX"
 printf '  - Workspace: %s\n' "$WORKSPACE_PATH"
 printf '  - Renderer:  %s\n' "$RENDERER_PATH"
 printf '  - Timezone:  %s\n' "$CRON_TZ"
@@ -487,6 +609,6 @@ else
   printf '\nIMPORTANT — Automations are installed DISABLED by default:\n'
   printf '  - user_config.json was NOT modified.\n'
   printf '  - Run a test run interactively first to verify permissions.\n'
-  printf '  - Enable "Career Autopilot — Find New Jobs" and "Career Autopilot — Apply & Draft Pipeline"\n'
+  printf '  - Enable "%s — Find New Jobs" and "%s — Apply & Draft Pipeline"\n' "$DISPLAY_PREFIX" "$DISPLAY_PREFIX"
   printf '    manually in the Automations dashboard: [Open Automations Dashboard](sidecar://dashboard)\n'
 fi
