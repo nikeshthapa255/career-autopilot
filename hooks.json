@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./hooks/pre_tool_safety.sh",
+            "command": "sh ./hooks/pre_tool_safety.sh",
             "timeout": 10
           }
         ]

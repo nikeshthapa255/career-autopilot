@@ -4,12 +4,12 @@
 
 ---
 
-## 1. Plugin Directory Layout (`plugin/`)
+## 1. Plugin Directory Layout (Repository Root)
 
-The distributable plugin lives under `plugin/` in this repository and ships with zero personal candidate data:
+The repository root **is** the distributable Antigravity plugin (`career-autopilot`) and ships with zero personal candidate data:
 
 ```text
-plugin/
+career-autopilot/
 ├── plugin.json                         # Required manifest (JSONC supported)
 ├── README.md                           # User-facing documentation (never read by the agent)
 ├── hooks.json                          # MUST sit directly at plugin root
@@ -25,47 +25,51 @@ plugin/
 │   └── dashboard/                      # Live Aux Pane UI Extension (has_web_ui: true)
 │       ├── sidecar.json                # SIDECAR_UI_ENTRYPOINT_AUX_PANE config
 │       ├── package.json
-│       ├── main.mjs                    # Read-only SidecarApp backend
+│       ├── main.mjs                    # SidecarApp server + Automations configurator API
 │       ├── index.html
 │       ├── styles.css
 │       └── app.js
-└── skills/
-    ├── career-autopilot-onboard/       # Phase 0 intake, preferences, workspace init
-    │   ├── SKILL.md
-    │   ├── references/
-    │   │   └── intake-question-tree.md
-    │   └── scripts/
-    │       └── init-workspace.sh
-    ├── career-autopilot-scout/         # Phase 1 multi-source discovery & screening
-    │   ├── SKILL.md
-    │   └── references/
-    │       ├── ats-api-endpoints.md
-    │       └── screening-gates.md
-    ├── career-autopilot-fit/           # Optional: role-fit mind-maps, 80%+ rubric & prep queue
-    │   ├── SKILL.md
-    │   └── references/
-    │       └── track-guide-template.md
-    ├── career-autopilot-apply/         # Phase 2 tailoring, browser apply, & outreach
-    │   ├── SKILL.md
-    │   ├── references/
-    │   │   ├── workflow-1-tailor.md
-    │   │   ├── workflow-2-browser-apply.md
-    │   │   └── workflow-3-cold-email.md
-    │   ├── resources/
-    │   │   ├── resume_template.html
-    │   │   └── application_state_template.md
-    │   └── scripts/
-    │       ├── render_resume_pdf.sh
-    │       └── render_resume_pdf.ps1
-    └── clear-natural-english/          # Prose clarity & anti-AI-slop writing standard
-        ├── SKILL.md
-        └── references/
-            └── patterns-and-examples.md
+├── skills/
+│   ├── career-autopilot-onboard/       # Phase 0 intake, preferences, workspace init
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   │   └── intake-question-tree.md
+│   │   └── scripts/
+│   │       └── init-workspace.sh
+│   ├── career-autopilot-scout/         # Phase 1 multi-source discovery & screening
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── ats-api-endpoints.md
+│   │       └── screening-gates.md
+│   ├── career-autopilot-fit/           # Optional: role-fit mind-maps, 80%+ rubric & prep queue
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       └── track-guide-template.md
+│   ├── career-autopilot-apply/         # Phase 2 tailoring, browser apply, & outreach
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   │   ├── workflow-1-tailor.md
+│   │   │   ├── workflow-2-browser-apply.md
+│   │   │   └── workflow-3-cold-email.md
+│   │   ├── resources/
+│   │   │   ├── resume_template.html
+│   │   │   └── application_state_template.md
+│   │   └── scripts/
+│   │       ├── render_resume_pdf.sh
+│   │       └── render_resume_pdf.ps1
+│   └── clear-natural-english/          # Prose clarity & anti-AI-slop writing standard
+│       ├── SKILL.md
+│       └── references/
+│           └── patterns-and-examples.md
+├── workspace-template/                 # Bundled private-workspace starter templates
+├── automations/                        # Scheduled sidecar templates & CLI installer
+├── docs/                               # Architecture, onboarding, and spec documentation
+└── tests/                              # Zero-PII & PDF renderer verification suite
 ```
 
 ---
 
-## 2. Manifest (`plugin/plugin.json`) Contract
+## 2. Manifest (`plugin.json`) Contract
 
 Antigravity parses `plugin.json` as JSONC (comments and trailing commas allowed). **Only documented top-level keys are kept; any unknown top-level field is silently discarded** (it neither takes effect nor errors).
 
@@ -86,24 +90,24 @@ Antigravity parses `plugin.json` as JSONC (comments and trailing commas allowed)
 
 ## 3. Rules, Agents, and Skills Constraints
 
-### 3.1 Always-On Rules (`plugin/rules/AGENTS.md`)
+### 3.1 Always-On Rules (`rules/AGENTS.md`)
 - **Format:** Plain Markdown with **no YAML frontmatter** (`rules/AGENTS.md` is merged into the active rule set whenever the plugin is enabled).
 - **Hard Size Cap:** **24,000 bytes (`24 KB`)** per file after expanding any `@[label](path)` includes; content over the limit is truncated on line boundaries.
 - **Aggregate Budget:** Always-on and global rules share Antigravity's **20,000-token** `defaultRulesBudget`. Keeping `AGENTS.md` crisp and focused avoids demotion to path pointers.
 - **Core Invariants Enforced:** Zero metric/employer fabrication, strict `master_profile.md` baseline lock, `hitl_pre_submit` safe default for web applications unless explicitly set to `yolo_with_guardrails`, unconditional anti-bot/CAPTCHA/email-code stops, indirect prompt-injection & honeypot defense, shady legal clause escalation, and mandatory HITL gate on cold emails (blocking `current_employer` and `->` in subject lines).
 
-### 3.2 Agent Definitions (`plugin/agents/*.md`)
+### 3.2 Agent Definitions (`agents/*.md`)
 Agent markdown files use YAML frontmatter specifying `name`, `description`, `tools`, `mainAgent`, `subagent`, and execution policies, followed by strict isolation rules:
 - `career-autopilot-scout.md`: Phase 1 read-only discovery scout (returns structured leads and exclusions; never edits shared state files directly if delegated under coordinator merge).
 - `career-autopilot-worker.md`: Phase 2 isolated worker bound to one `applications/<company-slug>/` folder; reads `GLOBAL_REFERENCE.md` and `master_profile.md` read-only and never edits `applications/tracker.md` or `GLOBAL_REFERENCE.md` concurrently.
 
-### 3.3 Skills (`plugin/skills/*/SKILL.md`)
+### 3.3 Skills (`skills/*/SKILL.md`)
 - Every `SKILL.md` begins with YAML frontmatter containing lowercase hyphenated `name` (`career-autopilot-onboard`, `career-autopilot-scout`, `career-autopilot-fit`, `career-autopilot-apply`, `clear-natural-english`) and third-person `description` triggers.
 - Bulk runbooks, endpoint guides, HTML templates, and helper scripts reside in `./references/`, `./resources/`, and `./scripts/` linked via relative markdown links so Antigravity loads only metadata until a skill activates (progressive disclosure).
 
 ---
 
-## 4. Lifecycle Hooks (`plugin/hooks.json`)
+## 4. Lifecycle Hooks (`hooks.json`)
 
 ### 4.1 Placement & Execution Environment
 - **Root Placement Requirement:** Antigravity runtime plugin discovery loads `hooks.json` **strictly from the plugin root** (`<plugin_dir>/hooks.json`). While `agy plugin install` copies `hooks/hooks.json` for pure Gemini CLI (`gemini-extension.json`) or Claude Code (`.claude-plugin/plugin.json`) imports, **native plugins (`plugin.json`) do not run extension staging** and must keep `hooks.json` directly at the plugin root.
@@ -113,7 +117,7 @@ Agent markdown files use YAML frontmatter specifying `name`, `description`, `too
 ### 4.2 `PreToolUse` I/O Contract & Safety Gates
 - **Stdin:** CamelCase JSON containing common metadata (`conversationId`, `workspacePaths`, `cwd`, `hookEventName`) plus `toolCall` (`id`, `name`, `args`).
 - **Stdout:** JSON object with required `"decision"` (`"allow"`, `"deny"`, `"ask"`, `"force_ask"`) and optional `"reason"`, `"permissionOverrides"`, or `"overwrite"`.
-- **Portable POSIX Implementation (`plugin/hooks/pre_tool_safety.sh`):** Hook `"career-autopilot-safety-gate"` matches `run_command` and executes `./hooks/pre_tool_safety.sh` (`timeout: 10`), avoiding non-guaranteed runtimes (`jq`, Python, Node) by parsing `stdin` JSON with POSIX `sh` / `awk` / `grep` and defaulting gracefully to `"allow"` on benign commands.
+- **Portable POSIX Implementation (`hooks/pre_tool_safety.sh`):** Hook `"career-autopilot-safety-gate"` matches `run_command` and executes `./hooks/pre_tool_safety.sh` (`timeout: 10`), avoiding non-guaranteed runtimes (`jq`, Python, Node) by parsing `stdin` JSON with POSIX `sh` / `awk` / `grep` and defaulting gracefully to `"allow"` on benign commands.
 - **Safety Gates Enforced by `pre_tool_safety.sh`:**
   1. **Unattended & HITL Outbound Email Gate:** Inspects `gmail mutate` commands (`send`, `send-draft`, `send-with-attachment`, `reply`, `forward`, `react`, `create-reaction`). Whenever `AGY_UNATTENDED` is non-empty, returns `"decision": "deny"`. In interactive mode, returns `"decision": "force_ask"` so outbound sends always prompt explicitly.
   2. **Anti-Human-Verification-Code Read Gate:** Returns `"decision": "deny"` if a `gmail readonly` query searches for ATS human-verification security codes (`"confirm you're a human"` or Greenhouse/Ashby verification code queries).
@@ -124,7 +128,8 @@ Agent markdown files use YAML frontmatter specifying `name`, `description`, `too
 ## 5. Installation, Loading Priority & Lifecycle Links
 
 ### 5.1 Installation Options (Zero `config.json` Edits)
-- **Global User Install (Recommended for Personal Use):** Copy `plugin/` to `~/.gemini/config/plugins/career-autopilot/` (first verify `career-autopilot` does not collide with an existing directory or `name` in `~/.gemini/config/plugins/`).
+- **Antigravity CLI (1 Command):** `agy plugin install https://github.com/nikeshthapa255/career-autopilot` (works directly because `plugin.json` and `hooks.json` live at the repository root).
+- **Git-Only Global User Install (No CLI Needed):** `git clone https://github.com/nikeshthapa255/career-autopilot ~/.gemini/config/plugins/career-autopilot` (first verify `career-autopilot` does not collide with an existing directory or `name` in `~/.gemini/config/plugins/`; update via `git -C ~/.gemini/config/plugins/career-autopilot pull`).
 - **Workspace Project Registration:** Register via `<project>/.agents/plugins.json` using a workspace-relative or home-relative `path` to the parent directory containing `career-autopilot/`:
   ```json
   {
@@ -136,8 +141,8 @@ Agent markdown files use YAML frontmatter specifying `name`, `description`, `too
     ]
   }
   ```
-  Each entry directory is scanned **one level deep**, so `entries[].path` must point to the parent folder containing `career-autopilot/`, or `plugin/` may live directly at `.agents/plugins/career-autopilot/`.
-- **Marketplace vs. Repo Distribution:** Published Marketplace entries install via `search_marketplace` and `<plugin-card catalog-id="...">`. Self-hosted repository plugins are installed directly into `~/.gemini/config/plugins/career-autopilot/` or `.agents/plugins.json` (remembering that `agy plugin install` extension staging is for Gemini CLI / Claude Code formats rather than native `plugin.json` bundles).
+  Each entry directory is scanned **one level deep**, so `entries[].path` must point to the parent folder containing `career-autopilot/`, or the repository may be cloned directly at `.agents/plugins/career-autopilot/`.
+- **Marketplace vs. Repo Distribution:** Published Marketplace entries install via `search_marketplace` and `<plugin-card catalog-id="...">`. Self-hosted repository plugins with root `plugin.json` install via `agy plugin install <repo-url>`, direct `git clone` into `~/.gemini/config/plugins/career-autopilot/`, or `.agents/plugins.json`.
 
 ### 5.2 Loading Priority & State Integrity
 When duplicate names exist across customization roots, higher priority overrides lower priority in this exact order:

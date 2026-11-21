@@ -4,7 +4,7 @@ These rules apply whenever the `career-autopilot` plugin is enabled.
 
 ## 1. Zero PII and Workspace Boundary
 
-- Keep zero candidate PII inside the `career-autopilot` plugin directory (`plugin/`). Never write real candidate names, personal emails, phone numbers, social handles, employers, or application records into plugin files or templates.
+- Keep zero candidate PII inside the `career-autopilot` plugin repository or install directory. Never write real candidate names, personal emails, phone numbers, social handles, employers, or application records into plugin files or templates.
 - Store all private candidate profiles, preferences, leads, tailored HTML/PDFs, and application logs strictly inside the user's private `<workspace>/`.
 
 ## 2. Zero Fabrication and Master Profile Baseline

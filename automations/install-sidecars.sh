@@ -90,13 +90,35 @@ resolve_path_clean() {
 }
 
 detect_default_renderer() {
+  local repo_local="$REPO_ROOT/skills/career-autopilot-apply/scripts/render_resume_pdf.sh"
   local installed="$HOME/.gemini/config/plugins/career-autopilot/skills/career-autopilot-apply/scripts/render_resume_pdf.sh"
-  local repo_local="$REPO_ROOT/plugin/skills/career-autopilot-apply/scripts/render_resume_pdf.sh"
-  if [ -f "$installed" ]; then
-    printf '%s\n' "$installed"
-  else
+  if [ -f "$repo_local" ]; then
     printf '%s\n' "$repo_local"
+  else
+    printf '%s\n' "$installed"
   fi
+}
+
+is_protected_plugin_or_config_path() {
+  local target="$1"
+  local config_root
+  config_root="$(resolve_path_clean "$HOME/.gemini/config")"
+  case "$target" in
+    "$REPO_ROOT"|"$REPO_ROOT"/*|"$config_root"|"$config_root"/*)
+      return 0
+      ;;
+  esac
+  local probe="$target"
+  while [ -n "$probe" ] && [ "$probe" != "/" ]; do
+    if [ -f "$probe/plugin.json" ]; then
+      return 0
+    fi
+    local parent
+    parent="$(dirname "$probe")"
+    [ "$parent" = "$probe" ] && break
+    probe="$parent"
+  done
+  return 1
 }
 
 json_escape() {
@@ -403,6 +425,9 @@ if [ "$NON_INTERACTIVE" -eq 0 ] && [ -z "$DRY_RUN_DIR" ] && [ -t 0 ] && [ -z "$W
   printf 'Career Autopilot Sidecar Installer\n'
   printf '==================================\n'
   local_default_ws="$(pwd -P)"
+  if is_protected_plugin_or_config_path "$local_default_ws"; then
+    local_default_ws="$HOME/career-workspace"
+  fi
   read -r -p "Private job-search workspace path [$local_default_ws]: " input_ws
   WORKSPACE_PATH="${input_ws:-$local_default_ws}"
 
@@ -448,6 +473,14 @@ fi
 
 WORKSPACE_PATH="$(resolve_path_clean "$WORKSPACE_PATH")"
 RENDERER_PATH="$(resolve_path_clean "$RENDERER_PATH")"
+
+if is_protected_plugin_or_config_path "$WORKSPACE_PATH"; then
+  die "Workspace path ($WORKSPACE_PATH) must be a separate private folder outside the plugin repository and ~/.gemini/config."
+fi
+
+if [ -z "$DRY_RUN_DIR" ] && [ ! -d "$WORKSPACE_PATH" ]; then
+  die "Workspace directory does not exist: $WORKSPACE_PATH (initialize it first with init-workspace.sh or career-autopilot-onboard)."
+fi
 
 if [ "$EXPLICIT_PREFIX" -eq 0 ]; then
   if [ -n "$FIRST_NAME" ]; then

@@ -608,7 +608,7 @@ function inspect_segment(seg, base_unatt,    wc, idx, tok, seg_unatt, eq_pos, vn
     }
 
     if (g_group == "readonly") {
-      if (tolower(g_query) ~ /(confirm you.?re a human|(greenhouse|ashby).{0,40}verification code|verification code.{0,40}(greenhouse|ashby))/) {
+      if (tolower(g_query) ~ /(confirm you.?re a human|(greenhouse|ashby).*verification code|verification code.*(greenhouse|ashby))/) {
         deny_reason = "Blocked: auto-reading Gmail for ATS human-verification security codes is strictly forbidden."
         return 1
       }
@@ -705,7 +705,7 @@ END {
     print "A"
   }
 }
-' 2>/dev/null || printf 'A\n')"
+' 2>/dev/null || printf 'F\tSafety hook parser exited abnormally; review this command manually before running.\n')"
 
 HOOK_CWD=""
 FORCE_ASK_REASON=""

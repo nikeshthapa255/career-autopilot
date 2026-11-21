@@ -7,15 +7,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 
-RENDERER="$REPO_ROOT/plugin/skills/career-autopilot-apply/scripts/render_resume_pdf.sh"
+RENDERER="$REPO_ROOT/skills/career-autopilot-apply/scripts/render_resume_pdf.sh"
 FIX_GENERIC="$SCRIPT_DIR/fixtures/sample_resume_generic.html"
 FIX_TODO="$SCRIPT_DIR/fixtures/sample_resume_todo.html"
 FIX_TRAPS="$SCRIPT_DIR/fixtures/sample_ats_traps.html"
 
-PLUGIN_JSON="$REPO_ROOT/plugin/plugin.json"
-HOOKS_JSON="$REPO_ROOT/plugin/hooks.json"
-DASHBOARD_SIDECAR="$REPO_ROOT/plugin/sidecars/dashboard/sidecar.json"
-DASHBOARD_PKG="$REPO_ROOT/plugin/sidecars/dashboard/package.json"
+PLUGIN_JSON="$REPO_ROOT/plugin.json"
+HOOKS_JSON="$REPO_ROOT/hooks.json"
+DASHBOARD_SIDECAR="$REPO_ROOT/sidecars/dashboard/sidecar.json"
+DASHBOARD_PKG="$REPO_ROOT/sidecars/dashboard/package.json"
 SCOUT_SIDECAR="$REPO_ROOT/automations/find-new-jobs.sidecar.json.template"
 APPLY_SIDECAR="$REPO_ROOT/automations/auto-apply.sidecar.json.template"
 
@@ -43,7 +43,7 @@ EOF
   esac
 done
 
-TMP_ROOT="$SCRIPT_DIR/.test-tmp"
+TMP_ROOT="${TMPDIR:-/tmp}/career-autopilot-tests"
 mkdir -p "$TMP_ROOT"
 WORK_TMP="$(mktemp -d "$TMP_ROOT/run-XXXXXX")"
 cleanup() {

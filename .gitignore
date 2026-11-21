@@ -13,8 +13,17 @@ chrome-resume-*
 Thumbs.db
 *.local.*
 
-# Never commit locally initialized private candidate workspaces
+# Never commit locally initialized private candidate workspaces or personal documents
 workspace/
 private-workspace/
+/applications/
+/resume/
+/requirements/
+browser_sandbox/
 GLOBAL_REFERENCE.md
 master_profile.md
+*.pdf
+*.docx
+*.doc
+.env
+.env.*

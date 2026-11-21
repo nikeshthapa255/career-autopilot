@@ -336,81 +336,69 @@ The reference script must be upgraded from a hardcoded macOS Chrome script into 
 To distribute this framework cleanly to any Antigravity user while maintaining strict separation between **immutable, zero-PII plugin logic** and **private candidate workspace state**, organize the repository root as follows:
 
 ```text
-Job application automation/
-├── README.md                                     # Quickstart: install plugin, init workspace, run Phase 0
+career-autopilot/
+├── README.md                                     # Quickstart: 1-command install, onboard, scout, apply
 ├── .gitignore                                    # Ignores local test artifacts / scratch / personal workspaces
-│
-├── docs/                                         # Architecture & engineering specs
-│   ├── framework-architecture.md                 # This blueprint (Phases 0-2, schemas, scaling, renderer)
-│   ├── antigravity-plugin-and-sidecar-spec.md    # Plugin manifest, hooks.json, & scheduled sidecar spec
-│   ├── browser-extension-architecture.md         # Antigravity browser mechanics, ATS DOM trap guard & --autoConnect
-│   └── onboarding-guide.md                       # End-user walkthrough (macOS, Linux, WSL/Windows)
-│
-├── plugin/                                       # Distributable Antigravity Plugin (ZERO PII)
-│   │                                             # Install via ~/.gemini/config/plugins/career-autopilot/
-│   │                                             # or project .agents/plugins.json
-│   ├── plugin.json                               # Valid JSONC fields ONLY (name: "career-autopilot", displayName,
-│   │                                             # description, version, author, repository, logo, suggestedPrompts)
-│   ├── README.md                                 # User-facing plugin documentation
-│   ├── hooks.json                                # MUST sit at plugin root (PreToolUse safety gates)
-│   ├── hooks/                                    # Portable POSIX sh gate scripts invoked by hooks.json
-│   ├── assets/
-│   │   └── logo.svg                              # >=128x128 transparent high-contrast square SVG
-│   ├── rules/
-│   │   └── AGENTS.md                             # Always-on plugin guardrails (<24KB, zero fabrication,
-│   │                                             # anti-bot, hitl_pre_submit default, mandatory HITL email rule)
-│   ├── agents/                                   # Specialized subagent definitions (zero PII)
-│   │   ├── career-autopilot-scout.md             # Phase 1 read-only API/feed scout + trap screener
-│   │   └── career-autopilot-worker.md            # Phase 2 isolated per-slug worker (Workflows 1/2-prep/3-prep)
-│   ├── sidecars/
-│   │   └── dashboard/                            # Live Antigravity Aux Pane UI Extension (has_web_ui: true)
-│   │       ├── sidecar.json                      # SIDECAR_UI_ENTRYPOINT_AUX_PANE config
-│   │       ├── package.json
-│   │       ├── main.mjs                          # Read-only SidecarApp server
-│   │       ├── index.html
-│   │       ├── styles.css
-│   │       └── app.js
-│   └── skills/
-│       ├── career-autopilot-onboard/
-│       │   ├── SKILL.md                          # Phase 0: resume parser + preference interview + workspace init
-│       │   ├── references/
-│       │   │   └── intake-question-tree.md       # Structured multi-step onboarding interview
-│       │   └── scripts/
-│       │       └── init-workspace.sh             # Safe private workspace scaffolder
-│       ├── career-autopilot-scout/
-│       │   ├── SKILL.md                          # Phase 1: multi-source scout, dedup, tiering, truth gates
-│       │   └── references/
-│       │       ├── ats-api-endpoints.md          # Ashby GraphQL, Greenhouse boards-api, Lever, HN, YC, generic portals
-│       │       └── screening-gates.md            # Prompt-injection, honeypot, localization, anti-LLM honesty checks
-│       ├── career-autopilot-fit/
-│       │   ├── SKILL.md                          # Optional: role requirements mind-map, 80%+ rubric & prep queue
-│       │   └── references/
-│       │       └── track-guide-template.md       # Per-track expectations, strengths, honest gaps & topics template
-│       ├── career-autopilot-apply/
-│       │   ├── SKILL.md                          # Phase 2 coordinator: Workflows 1/2/3 + <=32 worker orchestration
-│       │   ├── references/
-│       │   │   ├── workflow-1-tailor.md          # Grounded tailoring + 1-page verification runbook
-│       │   │   ├── workflow-2-browser-apply.md   # Serialized uploads, tab isolation, HITL/YOLO & Mode A/B
-│       │   │   └── workflow-3-cold-email.md      # Verified contacts, subject rules, Gmail draft-first HITL
-│       │   ├── resources/
-│       │   │   ├── resume_template.html          # Zero-PII parameterized HTML/CSS template (A4 + Letter vars)
-│       │   │   └── application_state_template.md # Zero-PII per-application state log template
-│       │   └── scripts/
-│       │       ├── render_resume_pdf.sh          # Cross-platform Chrome headless renderer (macOS/Linux/WSL)
-│       │       └── render_resume_pdf.ps1         # Windows PowerShell companion fallback
-│       └── clear-natural-english/
-│           ├── SKILL.md                          # Direct, natural prose & anti-AI-slop editing standard
-│           └── references/
-│               └── patterns-and-examples.md      # Before/after clarity and anti-slop catalog
+├── plugin.json                                   # Root Antigravity plugin manifest (JSONC, ZERO PII)
+├── hooks.json                                    # MUST sit at plugin root (PreToolUse safety gates)
+├── hooks/                                        # Portable POSIX sh gate scripts invoked by hooks.json
+├── assets/
+│   └── logo.svg                                  # >=128x128 transparent high-contrast square SVG
+├── rules/
+│   └── AGENTS.md                                 # Always-on plugin guardrails (<24KB, zero fabrication,
+│                                                 # anti-bot, hitl_pre_submit default, mandatory HITL email rule)
+├── agents/                                       # Specialized subagent definitions (zero PII)
+│   ├── career-autopilot-scout.md                 # Phase 1 read-only API/feed scout + trap screener
+│   └── career-autopilot-worker.md                # Phase 2 isolated per-slug worker (Workflows 1/2-prep/3-prep)
+├── sidecars/
+│   └── dashboard/                                # Live Antigravity Aux Pane UI Extension (has_web_ui: true)
+│       ├── sidecar.json                          # SIDECAR_UI_ENTRYPOINT_AUX_PANE config
+│       ├── package.json
+│       ├── main.mjs                              # SidecarApp server + inline Automations configurator API
+│       ├── index.html
+│       ├── styles.css
+│       └── app.js
+├── skills/
+│   ├── career-autopilot-onboard/
+│   │   ├── SKILL.md                              # Phase 0: resume parser + preference interview + workspace init
+│   │   ├── references/
+│   │   │   └── intake-question-tree.md           # Structured multi-step onboarding interview
+│   │   └── scripts/
+│   │       └── init-workspace.sh                 # Safe private workspace scaffolder
+│   ├── career-autopilot-scout/
+│   │   ├── SKILL.md                              # Phase 1: multi-source scout, dedup, tiering, truth gates
+│   │   └── references/
+│   │       ├── ats-api-endpoints.md              # Ashby GraphQL, Greenhouse boards-api, Lever, HN, YC, generic portals
+│   │       └── screening-gates.md                # Prompt-injection, honeypot, localization, anti-LLM honesty checks
+│   ├── career-autopilot-fit/
+│   │   ├── SKILL.md                              # Optional: role requirements mind-map, 80%+ rubric & prep queue
+│   │   └── references/
+│   │       └── track-guide-template.md           # Per-track expectations, strengths, honest gaps & topics template
+│   ├── career-autopilot-apply/
+│   │   ├── SKILL.md                              # Phase 2 coordinator: Workflows 1/2/3 + <=32 worker orchestration
+│   │   ├── references/
+│   │   │   ├── workflow-1-tailor.md              # Grounded tailoring + 1-page verification runbook
+│   │   │   ├── workflow-2-browser-apply.md       # Serialized uploads, tab isolation, HITL/YOLO & Mode A/B
+│   │   │   └── workflow-3-cold-email.md          # Verified contacts, subject rules, Gmail draft-first HITL
+│   │   ├── resources/
+│   │   │   ├── resume_template.html              # Zero-PII parameterized HTML/CSS template (A4 + Letter vars)
+│   │   │   └── application_state_template.md     # Zero-PII per-application state log template
+│   │   └── scripts/
+│   │       ├── render_resume_pdf.sh              # Cross-platform Chrome headless renderer (macOS/Linux/WSL)
+│   │       └── render_resume_pdf.ps1             # Windows PowerShell companion fallback
+│   └── clear-natural-english/
+│       ├── SKILL.md                              # Direct, natural prose & anti-AI-slop editing standard
+│       └── references/
+│           └── patterns-and-examples.md          # Before/after clarity and anti-slop catalog
 │
 ├── workspace-template/                           # Cloned into user's private job-search workspace during Phase 0
 │   ├── .gitignore                                # CRITICAL: ignores resume/, GLOBAL_REFERENCE.md, applications/
 │   ├── GLOBAL_REFERENCE.md.template              # Parameterized preferences, policies, & Q-ID Decisions Ledger
 │   ├── resume/
 │   │   └── master_profile.md.template            # Domain-agnostic canonical profile + Verified Quantitative Baseline
-│   └── applications/
-│       ├── tracker.md.template                   # Master pipeline status table & legend
-│       └── new_leads.md.template                 # Verified Tier A / B1 / B2 / Pending / Excluded discovery log
+│   ├── applications/
+│   │   ├── tracker.md.template                   # Master pipeline status table & legend
+│   │   └── new_leads.md.template                 # Verified Tier A / B1 / B2 / Pending / Excluded discovery log
 │   └── requirements/
 │       └── README.md.template                    # Optional: role-fit mind-map, 4-gate triage & high-ROI prep index
 │
@@ -420,8 +408,16 @@ Job application automation/
 │   ├── auto-apply.sidecar.json.template          # Parameterized Phase 2 draft/pre-stage schedule (draft-only Gmail)
 │   └── install-sidecars.sh                       # Idempotent generator -> ~/.gemini/config/sidecars/<id>/sidecar.json
 │
+├── docs/                                         # Architecture & engineering specs
+│   ├── assets/
+│   │   └── extension-ui-demo.gif                 # Dark/light side-pane Extension UI demo GIF
+│   ├── framework-architecture.md                 # This blueprint (Phases 0-2, schemas, scaling, renderer)
+│   ├── antigravity-plugin-and-sidecar-spec.md    # Plugin manifest, hooks.json, & scheduled sidecar spec
+│   ├── browser-extension-architecture.md         # Antigravity browser mechanics, ATS DOM trap guard & --autoConnect
+│   └── onboarding-guide.md                       # End-user walkthrough (macOS, Linux, WSL/Windows)
+│
 └── tests/                                        # Automated verification suite (zero PII fixtures)
-    ├── test_zero_pii_scan.sh                     # Asserts zero hardcoded candidate PII in plugin/ & templates/
+    ├── test_zero_pii_scan.sh                     # Asserts zero hardcoded candidate PII across repo & templates
     ├── test_render_resume_pdf.sh                 # Tests --allow-todo block, strict exit codes, & 1-page output
     └── fixtures/
         ├── sample_resume_generic.html            # Synthetic non-PII resume fixture (Letter & A4)
@@ -429,6 +425,6 @@ Job application automation/
         └── sample_ats_traps.html                 # Fixture for honeypot & indirect prompt-injection screening
 ```
 
-### Key Architectural Boundary: Plugin vs. User Workspace
-- **`plugin/` (Distributable & Version-Controlled):** Contains **zero** personal data, resumes, or company leads. Can be shared publicly via Git, installed into `~/.gemini/config/plugins/<dir>/`, or referenced via `.agents/plugins.json`.
+### Key Architectural Boundary: Plugin Repository vs. User Workspace
+- **Plugin Repository (Root-Level Antigravity Plugin, Version-Controlled):** Contains **zero** personal data, resumes, or company leads. Can be installed directly via `agy plugin install <repo-url>`, cloned into `~/.gemini/config/plugins/career-autopilot/`, or referenced via `.agents/plugins.json`.
 - **User's Private Workspace (Generated by Phase 0 from `workspace-template/`):** Holds `resume/master_profile.md`, `GLOBAL_REFERENCE.md`, `applications/tracker.md`, `applications/new_leads.md`, and `applications/<slug>/` artifacts. Ships with a defensive `.gitignore` so personal PII and credentials are never accidentally published.

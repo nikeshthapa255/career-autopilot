@@ -33,7 +33,7 @@ Sets up a candidate's private job-application workspace from an existing resume 
    ```bash
    ./scripts/init-workspace.sh "<target-workspace-dir>"
    ```
-   (From the plugin install directory, invoke the resolved path to `init-workspace.sh`; pass `--template-dir <path-to-workspace-template>` if the plugin was installed outside the source repository.)
+   (From the plugin install directory, invoke `<plugin-dir>/skills/career-autopilot-onboard/scripts/init-workspace.sh "<target-workspace-dir>"`; it automatically locates the bundled `<plugin-dir>/workspace-template/`.)
 3. `init-workspace.sh` scaffolds `.gitignore`, `GLOBAL_REFERENCE.md.template`, `resume/master_profile.md.template`, `applications/tracker.md.template`, and `applications/new_leads.md.template` without overwriting populated user files unless `--force` is passed.
 4. For incremental updates inside an existing `<workspace>`, read `<workspace>/resume/master_profile.md` and `<workspace>/GLOBAL_REFERENCE.md` first so prior Q-ID decisions and application history stay intact.
 

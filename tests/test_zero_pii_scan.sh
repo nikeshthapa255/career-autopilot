@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # test_zero_pii_scan.sh — Verifies zero candidate PII, hardcoded home paths, or legacy reference leaks
-# across plugin/, workspace-template/, automations/, docs/, README.md, and tests/fixtures/.
+# across root plugin manifests/assets/agents/hooks/rules/sidecars/skills, workspace-template/,
+# automations/, docs/, README.md, and tests/fixtures/.
 
 set -euo pipefail
 
@@ -15,7 +16,8 @@ for arg in "$@"; do
       cat <<'EOF'
 Usage: test_zero_pii_scan.sh [--allow-missing]
 
-Scans plugin/, workspace-template/, automations/, docs/, README.md, and tests/fixtures/
+Scans root plugin components (plugin.json, hooks.json, agents/, assets/, hooks/, rules/,
+sidecars/, skills/), workspace-template/, automations/, docs/, README.md, and tests/fixtures/
 for personal emails, hardcoded user home paths, real phone numbers, non-placeholder
 profile URLs, and legacy reference workspace names.
 EOF
@@ -29,7 +31,14 @@ EOF
 done
 
 REQUIRED_TARGETS=(
-  "$REPO_ROOT/plugin"
+  "$REPO_ROOT/plugin.json"
+  "$REPO_ROOT/hooks.json"
+  "$REPO_ROOT/agents"
+  "$REPO_ROOT/assets"
+  "$REPO_ROOT/hooks"
+  "$REPO_ROOT/rules"
+  "$REPO_ROOT/sidecars"
+  "$REPO_ROOT/skills"
   "$REPO_ROOT/workspace-template"
   "$REPO_ROOT/automations"
   "$REPO_ROOT/docs"
@@ -123,6 +132,26 @@ LEGACY_MATCHES="$(
   grep -rnE 'india_remote_100k_jobs|remote_100k_jobs|job-apply-kit|\.agents/skills/job-apply' "${SCAN_TARGETS[@]}" 2>/dev/null || true
 )"
 report_failure "Legacy reference workspace token" "$LEGACY_MATCHES"
+
+# 7. Stray private candidate workspace files/directories at repository root
+STRAY_ROOT_FILES=""
+for stray in \
+  "$REPO_ROOT/GLOBAL_REFERENCE.md" \
+  "$REPO_ROOT/master_profile.md" \
+  "$REPO_ROOT/resume" \
+  "$REPO_ROOT/applications" \
+  "$REPO_ROOT/requirements" \
+  "$REPO_ROOT/browser_sandbox"; do
+  if [ -e "$stray" ]; then
+    STRAY_ROOT_FILES="${STRAY_ROOT_FILES}${stray}"$'\n'
+  fi
+done
+for ext_file in "$REPO_ROOT"/*.pdf "$REPO_ROOT"/*.docx "$REPO_ROOT"/*.doc; do
+  if [ -e "$ext_file" ]; then
+    STRAY_ROOT_FILES="${STRAY_ROOT_FILES}${ext_file}"$'\n'
+  fi
+done
+report_failure "Stray private workspace artifact at repository root" "$STRAY_ROOT_FILES"
 
 if [ "$FAILURES" -gt 0 ]; then
   echo "FAIL: Zero-PII scan detected $FAILURES violation category(ies)." >&2

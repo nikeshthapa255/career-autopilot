@@ -113,8 +113,28 @@ function fileUriToPath(uri) {
   return expandHome(s);
 }
 
+const PLUGIN_ROOT = realpathSafe(resolvePath(__dirname, '..', '..'));
+
+function isProtectedPluginOrConfigDir(dirPath) {
+  if (!dirPath) return true;
+  const resolved = realpathSafe(dirPath);
+  const configRoot = realpathSafe(join(homedir(), '.gemini', 'config'));
+  for (const protectedRoot of [PLUGIN_ROOT, configRoot]) {
+    if (!protectedRoot) continue;
+    const prefix = protectedRoot.endsWith(sep) ? protectedRoot : protectedRoot + sep;
+    if (resolved === protectedRoot || resolved.startsWith(prefix)) return true;
+  }
+  let probe = resolved;
+  while (probe && probe !== dirname(probe)) {
+    if (safeStat(join(probe, 'plugin.json')).isFile) return true;
+    probe = dirname(probe);
+  }
+  return false;
+}
+
 function isCareerWorkspace(dirPath) {
   if (!dirPath || !safeStat(dirPath).isDir) return false;
+  if (isProtectedPluginOrConfigDir(dirPath)) return false;
   return (
     safeStat(join(dirPath, 'GLOBAL_REFERENCE.md')).isFile ||
     safeStat(join(dirPath, 'applications', 'tracker.md')).isFile ||
@@ -164,9 +184,10 @@ function titleCasePrefix(slug) {
 }
 
 function detectDefaultRendererPath() {
+  const scriptName = process.platform === 'win32' ? 'render_resume_pdf.ps1' : 'render_resume_pdf.sh';
   const candidates = [
-    resolvePath(__dirname, '..', '..', 'skills', 'career-autopilot-apply', 'scripts', 'render_resume_pdf.sh'),
-    join(homedir(), '.gemini', 'config', 'plugins', 'career-autopilot', 'skills', 'career-autopilot-apply', 'scripts', 'render_resume_pdf.sh'),
+    resolvePath(__dirname, '..', '..', 'skills', 'career-autopilot-apply', 'scripts', scriptName),
+    join(homedir(), '.gemini', 'config', 'plugins', 'career-autopilot', 'skills', 'career-autopilot-apply', 'scripts', scriptName),
   ];
   for (const p of candidates) {
     if (safeStat(p).isFile) return realpathSafe(p);
@@ -175,12 +196,9 @@ function detectDefaultRendererPath() {
 }
 
 function detectCliInstallerPath() {
-  const candidates = [
-    resolvePath(__dirname, '..', '..', '..', 'automations', 'install-sidecars.sh'),
-  ];
-  for (const p of candidates) {
-    if (safeStat(p).isFile) return realpathSafe(p);
-  }
+  if (process.platform === 'win32') return null;
+  const candidate = resolvePath(__dirname, '..', '..', 'automations', 'install-sidecars.sh');
+  if (safeStat(candidate).isFile) return realpathSafe(candidate);
   return null;
 }
 
@@ -1001,6 +1019,13 @@ function validateConfigurePayload(raw) {
     return { ok: false, status: 400, error: `Workspace directory does not exist: ${rawWorkspace}` };
   }
   const workspaceReal = realpathSafe(expandedWorkspace);
+  if (isProtectedPluginOrConfigDir(workspaceReal)) {
+    return {
+      ok: false,
+      status: 400,
+      error: 'Workspace must live outside the career-autopilot plugin repository and ~/.gemini/config.',
+    };
+  }
   if (!isCareerWorkspace(workspaceReal)) {
     return {
       ok: false,

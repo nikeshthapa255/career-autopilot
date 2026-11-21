@@ -7,7 +7,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 PLUGIN_DIR="$(cd "$SKILL_DIR/../.." && pwd -P)"
-REPO_ROOT_CANDIDATE="$(cd "$PLUGIN_DIR/.." 2>/dev/null && pwd -P || true)"
 
 FORCE=0
 TEMPLATES_ONLY=0
@@ -29,10 +28,9 @@ Options:
 
 Template Discovery Order (when --template-dir is not specified):
   1. $CAREER_AUTOPILOT_TEMPLATE_DIR environment variable
-  2. <repo-root>/workspace-template (relative to plugin/skills/career-autopilot-onboard/scripts)
+  2. <plugin-dir>/workspace-template (relative to skills/career-autopilot-onboard/scripts)
   3. <skill-dir>/resources/workspace-template
-  4. <plugin-dir>/workspace-template
-  5. ./workspace-template or ../workspace-template (from current working directory)
+  4. ./workspace-template or ../workspace-template (from current working directory)
 EOF
 }
 
@@ -69,9 +67,8 @@ resolve_template_dir() {
   fi
 
   for candidate in \
-    "${REPO_ROOT_CANDIDATE:+$REPO_ROOT_CANDIDATE/workspace-template}" \
-    "$SKILL_DIR/resources/workspace-template" \
     "$PLUGIN_DIR/workspace-template" \
+    "$SKILL_DIR/resources/workspace-template" \
     "$PWD/workspace-template" \
     "$PWD/../workspace-template"; do
     [ -n "$candidate" ] || continue
@@ -84,9 +81,8 @@ resolve_template_dir() {
   printf '%s\n' \
     "ERROR: Could not locate workspace-template/ directory." \
     "Checked:" \
-    "  - ${REPO_ROOT_CANDIDATE:-<none>}/workspace-template" \
-    "  - $SKILL_DIR/resources/workspace-template" \
     "  - $PLUGIN_DIR/workspace-template" \
+    "  - $SKILL_DIR/resources/workspace-template" \
     "  - $PWD/workspace-template" \
     "  - $PWD/../workspace-template" \
     "If the plugin was copied standalone outside its repository, pass --template-dir <path/to/workspace-template> or set CAREER_AUTOPILOT_TEMPLATE_DIR." >&2
@@ -136,21 +132,64 @@ if [ -z "$TARGET_DIR" ]; then
 fi
 
 TEMPLATE_DIR="$(resolve_template_dir)"
+TEMPLATE_PARENT_ABS="$(cd "$TEMPLATE_DIR/.." && pwd -P)"
+
+# Resolve target path via nearest existing ancestor BEFORE creating any directory.
+resolve_target_before_mkdir() {
+  local raw="$1"
+  local abs="$raw"
+  case "$abs" in
+    /*) ;;
+    *) abs="$PWD/$abs" ;;
+  esac
+  local probe="$abs"
+  local suffix=""
+  while [ ! -d "$probe" ]; do
+    local base
+    base="$(basename "$probe")"
+    local parent
+    parent="$(dirname "$probe")"
+    if [ "$parent" = "$probe" ]; then
+      break
+    fi
+    if [ -n "$suffix" ]; then
+      suffix="$base/$suffix"
+    else
+      suffix="$base"
+    fi
+    probe="$parent"
+  done
+  local real_base
+  real_base="$(cd "$probe" && pwd -P)"
+  if [ -n "$suffix" ]; then
+    printf '%s/%s\n' "${real_base%/}" "$suffix"
+  else
+    printf '%s\n' "$real_base"
+  fi
+}
+
+TARGET_CANDIDATE="$(resolve_target_before_mkdir "$TARGET_DIR")"
+CONFIG_ROOT="$(resolve_target_before_mkdir "$HOME/.gemini/config")"
+
+# Guard against initializing inside the plugin, template, ~/.gemini/config, or any plugin.json tree.
+case "$TARGET_CANDIDATE" in
+  "$PLUGIN_DIR"|"$PLUGIN_DIR"/*|"$TEMPLATE_DIR"|"$TEMPLATE_DIR"/*|"$TEMPLATE_PARENT_ABS"|"$TEMPLATE_PARENT_ABS"/*|"$CONFIG_ROOT"|"$CONFIG_ROOT"/*)
+    die "Target workspace ($TARGET_CANDIDATE) must be a separate private directory outside the plugin repository and ~/.gemini/config."
+    ;;
+esac
+
+probe_plugin="$TARGET_CANDIDATE"
+while [ -n "$probe_plugin" ] && [ "$probe_plugin" != "/" ]; do
+  if [ -f "$probe_plugin/plugin.json" ]; then
+    die "Target workspace ($TARGET_CANDIDATE) cannot be inside an Antigravity plugin directory ($probe_plugin)."
+  fi
+  parent_plugin="$(dirname "$probe_plugin")"
+  [ "$parent_plugin" = "$probe_plugin" ] && break
+  probe_plugin="$parent_plugin"
+done
 
 mkdir -p "$TARGET_DIR"
 TARGET_ABS="$(cd "$TARGET_DIR" && pwd -P)"
-
-# Guard against accidentally initializing inside the template, plugin, or repo root directory.
-TEMPLATE_PARENT_ABS="$(cd "$TEMPLATE_DIR/.." && pwd -P)"
-if [ "$TARGET_ABS" = "$TEMPLATE_DIR" ] || [ "$TARGET_ABS" = "$PLUGIN_DIR" ] || [ "$TARGET_ABS" = "$TEMPLATE_PARENT_ABS" ]; then
-  die "Target workspace ($TARGET_ABS) must be a separate private directory outside the plugin/template repository."
-fi
-
-case "$TARGET_ABS" in
-  "$PLUGIN_DIR"/*|"$TEMPLATE_DIR"/*)
-    die "Target workspace ($TARGET_ABS) must not be nested inside the distributable plugin or template directories."
-    ;;
-esac
 
 mkdir -p "$TARGET_ABS/resume" "$TARGET_ABS/applications"
 
@@ -201,12 +240,12 @@ if [ "$TEMPLATES_ONLY" -ne 1 ]; then
 fi
 
 RENDER_SCRIPT="$PLUGIN_DIR/skills/career-autopilot-apply/scripts/render_resume_pdf.sh"
-if [ -f "$TEMPLATE_PARENT_ABS/automations/install-sidecars.sh" ]; then
+if [ -f "$PLUGIN_DIR/automations/install-sidecars.sh" ]; then
+  SIDECAR_INSTALLER="$PLUGIN_DIR/automations/install-sidecars.sh"
+elif [ -f "$TEMPLATE_PARENT_ABS/automations/install-sidecars.sh" ]; then
   SIDECAR_INSTALLER="$TEMPLATE_PARENT_ABS/automations/install-sidecars.sh"
-elif [ -n "$REPO_ROOT_CANDIDATE" ] && [ -f "$REPO_ROOT_CANDIDATE/automations/install-sidecars.sh" ]; then
-  SIDECAR_INSTALLER="$REPO_ROOT_CANDIDATE/automations/install-sidecars.sh"
 else
-  SIDECAR_INSTALLER="<repo>/automations/install-sidecars.sh"
+  SIDECAR_INSTALLER="<plugin-dir>/automations/install-sidecars.sh"
 fi
 
 printf '\nWorkspace initialized: %s\n' "$TARGET_ABS"

@@ -191,9 +191,9 @@ Regardless of `web_apply_mode`, the agent will **never** solve or bypass CAPTCHA
 ## Step 8 (Post-Interview Execution): Baseline 1-Page Render Verification
 
 Immediately after writing `<workspace>/resume/master_profile.md` and `<workspace>/GLOBAL_REFERENCE.md` (with Step 1–7 recorded in Section 4):
-1. Copy `../career-autopilot-apply/resources/resume_template.html` to `<workspace>/resume/backup_resume.html`.
+1. Copy `../../career-autopilot-apply/resources/resume_template.html` to `<workspace>/resume/backup_resume.html`.
 2. Populate `<workspace>/resume/backup_resume.html` from `<workspace>/resume/master_profile.md` (setting `<html lang="en" data-page-size="a4">` or `"letter"` per `resume_page_size`, replacing all `{{...}}` template tokens, and omitting `{{PHONE_SEGMENT}}` when `phone_policy` omits phone on PDFs).
-3. Run `../career-autopilot-apply/scripts/render_resume_pdf.sh` (or `render_resume_pdf.ps1` on native Windows PowerShell) with `--strict-1-page` and **without** `--allow-todo` to produce `<workspace>/resume/<Candidate_Slug>_Backup_Resume.pdf`.
+3. Run `../../career-autopilot-apply/scripts/render_resume_pdf.sh` (or `render_resume_pdf.ps1` on native Windows PowerShell) with `--strict-1-page` and **without** `--allow-todo` to produce `<workspace>/resume/<Candidate_Slug>_Backup_Resume.pdf`.
    - If intentional `[TODO:` fields remain unresolved in the draft, inform the user clearly, run a preview render with `--allow-todo`, and note that strict production applications remain blocked until `[TODO:` markers are resolved.
 4. Inspect `<workspace>/resume/<Candidate_Slug>_Backup_Resume.pdf` via `read_file` to verify `Page 1 of 1`, crisp layout, and zero leaked `[TODO:` strings.
 5. Present the created workspace files and next steps (Phase 1 discovery via `career-autopilot-scout`, Phase 2 apply via `career-autopilot-apply`, and optional `automations/install-sidecars.sh` setup).
