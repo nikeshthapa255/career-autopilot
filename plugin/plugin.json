@@ -6,7 +6,8 @@
   "author": {
     "name": "Career Autopilot Contributors"
   },
-  "repository": "https://github.com/example/career-autopilot",
+  "homepage": "https://github.com/nikeshthapa255/career-autopilot",
+  "repository": "https://github.com/nikeshthapa255/career-autopilot",
   "logo": "assets/logo.svg",
   "suggestedPrompts": [
     "Onboard my resume into a private Career Autopilot workspace with India-default preferences and render a baseline 1-page PDF",

@@ -109,9 +109,10 @@ PHONE_MATCHES="$(
 )"
 report_failure "Non-placeholder phone number" "$PHONE_MATCHES"
 
-# 5. Non-placeholder LinkedIn or GitHub profile URLs
+# 5. Non-placeholder LinkedIn or GitHub profile URLs (allow official plugin repo URL only)
 PROFILE_MATCHES="$(
-  grep -rnEo '(linkedin\.com/in/|github\.com/)[A-Za-z0-9._-]+' "${SCAN_TARGETS[@]}" 2>/dev/null \
+  grep -rnEo '(linkedin\.com/in/|github\.com/)[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)?' "${SCAN_TARGETS[@]}" 2>/dev/null \
+    | grep -Ev 'github\.com/nikeshthapa255/career-autopilot([/?&#"'"'"'[:space:]]|$)' \
     | grep -Ev '(linkedin\.com/in/|github\.com/)(example|example-candidate|your-handle|your-username|your-org|career-autopilot|ChromeDevTools|google|anthropics)([/?&#"'"'"'[:space:]]|$)' \
     || true
 )"
