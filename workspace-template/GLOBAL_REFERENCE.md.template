@@ -82,8 +82,9 @@ timezone:
     - "APAC / SG / AU overlap"
     - "EU / UK afternoon overlap"
     - "Async-first"
-  extended_overlap_willingness: false                 # Set true only if willing to work US evening/night overlap (routes to Tier B2)
-  max_overlap_shift_hours: 4
+  extended_overlap_willingness: false                 # Set true only if willing to shift hours for partial cross-ocean overlap (routes to Tier B2 within cap)
+  max_overlap_shift_hours: 4                          # HARD EXCLUSION CAP: required shift > max_overlap_shift_hours -> Excluded (tz_shift_exceeded)
+  allow_full_foreign_shift_oncall: false              # HARD EXCLUSION: false excludes full foreign-TZ business hours / primary foreign on-call (full_foreign_shift_oncall)
 
 comp_floor:
   # Examples:

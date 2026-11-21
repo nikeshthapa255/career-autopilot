@@ -2,7 +2,8 @@
 
 Researches verified public contacts and authentic technical/product hooks, pairs outreach with a strict 1-page tailored PDF resume, drafts a concise cold email package, and enforces a **mandatory HITL approval gate** before sending.
 
-> **Eligibility Gate (`outreach_policy`):** Evaluate `GLOBAL_REFERENCE.md` -> `outreach_policy` before researching or drafting:
+> **Eligibility Gate (`outreach_policy` & Tier Approval):** Evaluate `GLOBAL_REFERENCE.md` -> `outreach_policy` and `<workspace>/applications/new_leads.md` before researching or drafting:
+> - **Approved Tier Only:** Run Workflow 3 **only** for `Tier A`, `Tier B1`, or **explicitly user-approved `Tier B2`** roles (that also pass `<workspace>/requirements/README.md` if present). **Never** research contacts or draft cold outreach for unapproved `Tier B2`, `Pending Browser Check`, or `Excluded` leads.
 > - Run Workflow 3 **only** when `eligibility_rule` passes (e.g., established company or remote target-domain role meeting `comp_floor`) AND the ATS is **not** listed in `skip_form_only_ats` (e.g., `notion_form`).
 > - Skip cold email for roles failing `comp_floor` or companies lacking a verified public email, routing those roles solely through [Workflow 2 (Browser Apply)](./workflow-2-browser-apply.md).
 
@@ -54,6 +55,7 @@ Create `applications/<company-slug>/cold_email.md` with:
 4. **Follow-Up Template (5–7 Days Later):**
    - 40–70 words, polite single-reply bump reinforcing one relevant point.
 5. **Pre-Send HITL Checklist:**
+   - [ ] Target role is `Tier A`, `Tier B1`, or explicitly user-approved `Tier B2` (never unapproved `Tier B2`, `Pending Browser Check`, or `Excluded`).
    - [ ] Tailored PDF rendered cleanly without `--allow-todo` and verified `Page 1 of 1` via `read_file`.
    - [ ] Recipient email verified with explicit public `Source URL`.
    - [ ] Subject matches `Job Application: <Exact Role Title> — <Candidate Name>` and passes `forbidden_subject_tokens` (zero `current_employer`, zero `->`).

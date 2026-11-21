@@ -50,6 +50,7 @@ These rules apply whenever the `career-autopilot` plugin is enabled.
 ## 7. Explicit HITL Cold Email Gate and Forbidden Subject Tokens
 
 - Cold email outreach (`Workflow 3`) is **always strict HITL** (`outreach_policy.mode: hitl_strict`).
+- Never research contacts or draft cold outreach for unapproved `Tier B2`, `Pending Browser Check`, or `Excluded` leads; run Workflow 3 only for `Tier A`, `Tier B1`, or explicitly user-approved `Tier B2` roles.
 - Always draft first (`gmail mutate create-draft` with `AGY_ACCOUNT` when Gmail is connected, using `--to ""` for `[HOLD]` drafts if preconditions remain pending, or produce a clean Markdown dossier when no email plugin is connected).
 - Before sending any email (`gmail mutate send`, `send-draft`, `send-with-attachment`, `reply`, `forward`, or `react`), display the exact `To`, `Subject`, message body, and PDF attachment path directly in chat and obtain explicit user approval in the active conversation.
 - In unattended or scheduled runs (`AGY_UNATTENDED` non-empty), outbound email send commands are strictly forbidden.

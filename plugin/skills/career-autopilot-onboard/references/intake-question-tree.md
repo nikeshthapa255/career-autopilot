@@ -95,9 +95,11 @@ Rules for running the interview:
 - `standard_foreign_visa_answer`: `"N/A - I will be working outside the target country (remote from India)"` (or `No` when applying strictly for remote India/EOR employment and only `Yes/No` exists)
 
 **`ask_question` Call:**
-- **Question 1 (`work_modes` & regions, `is_multi_select: true`):** `Which work modes and hiring regions do you want to target?`
-  - `Remote — India, Worldwide, or APAC (Recommended)` -> `remote_india_worldwide_apac`
-  - `Remote — US or EU overlap (willing to shift evening/night hours in IST)` -> `remote_us_eu_overlap`
+- **Question 1 (`work_modes`, regions & timezone-shift cap, `is_multi_select: true`):** `Which work modes, hiring regions, and timezone overlap levels do you want to target?`
+  - `Remote — India, Worldwide, or APAC daytime/async (Recommended)` -> `remote_india_worldwide_apac` (`extended_overlap_willingness: false`, `max_overlap_shift_hours: 3`, `allow_full_foreign_shift_oncall: false`)
+  - `Remote — EU / UK afternoon or partial US overlap (<= 4h shift; no full US night shift)` -> `remote_partial_overlap_4h` (`extended_overlap_willingness: true`, `max_overlap_shift_hours: 4`, `allow_full_foreign_shift_oncall: false`)
+  - `Remote — Extended cross-ocean overlap (up to 6h shift; no full foreign-TZ shift or on-call)` -> `remote_extended_overlap_6h` (`extended_overlap_willingness: true`, `max_overlap_shift_hours: 6`, `allow_full_foreign_shift_oncall: false`)
+  - `Remote — Full US / foreign-timezone hours & on-call rotation` -> `remote_full_foreign_shift_oncall` (`extended_overlap_willingness: true`, `max_overlap_shift_hours: 12`, `allow_full_foreign_shift_oncall: true`)
   - `Hybrid or Onsite — Indian hubs (e.g., Bengaluru, Pune, Mumbai, Delhi NCR, Chennai)` -> `hybrid_onsite_india`
   - `Open to international relocation (while noting remote preference first)` -> `international_relocation`
 - **Question 2 (`notice_period_days`):** `What is your notice period for earliest start date calculations?`
@@ -107,6 +109,7 @@ Rules for running the interview:
   - `90 days / 3 months` -> `90`
 
 **Follow-up text (if missing):**
+- Confirm the exact numeric `timezone.max_overlap_shift_hours` hard cap and `timezone.allow_full_foreign_shift_oncall` boolean (`false` by default unless `remote_full_foreign_shift_oncall` was selected). Note explicitly that postings exceeding `max_overlap_shift_hours` or requiring disallowed full foreign-timezone shifts/on-call are hard-excluded (`tz_shift_exceeded` / `full_foreign_shift_oncall`) rather than kept in `Tier B2`.
 - Ask for `residence_city` (used for ATS `City*` inputs, e.g., `<City>, India`), `preferred_onsite_hybrid_hubs[]` (if `hybrid` or `onsite` is selected), and whether `resume_header_location` should show `India (IST / UTC+5:30)` or `<City>, India`.
 - If the user is NOT based in India, capture their actual `residence_country`, `residence_city`, `primary_iana` timezone, `display_label`, and `foreign_visas_held`.
 - If `international_relocation` is selected, confirm `relocation_policy.mode: yes_with_remote_preference_note` (`"First preference is always the remote role."`) and record `open_relocation_hubs[]`.

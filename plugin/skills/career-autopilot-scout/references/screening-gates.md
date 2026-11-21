@@ -4,7 +4,7 @@ Run every gate below on each candidate posting before assigning a tier or queuin
 
 ---
 
-## Gate 1: HTTP 200 & Hidden Region / Work-Auth / Onsite Audit
+## Gate 1: HTTP 200 & Hidden Region / Work-Auth / Onsite / Timezone-Shift Audit
 
 Never take `"Remote"` or `"Worldwide"` in a job title at face value. Inspect the full JD, `secondaryLocations`, and every required form control (`applicationForm`, Greenhouse `questions[]`, or Mode A/B live DOM):
 
@@ -16,6 +16,12 @@ Never take `"Remote"` or `"Worldwide"` in a job title at face value. Inspect the
    - For cross-border remote roles, verify explicit remote hiring via EOR (`Deel`, `Remote`, `Rippling`, `Oyster`), direct international contractor contract, or local subsidiary (`India entity`).
    - Exclude roles requiring local citizenship, security clearances, or existing foreign work permits (`W-2 only, no EOR/contractor`).
 5. **Unstated Hybrid / Travel Mandates:** Flag `"quarterly in-person surges"` or mandatory hub attendance (`"3 days/week in <Hub>"`). If `target_geos.work_modes` is strictly `["remote"]`, exclude hidden hybrid/onsite roles; if `hybrid`/`onsite` is opted in, match against `residence_city` or `notice_and_relocation.relocation_policy.open_relocation_hubs`.
+6. **Hard Timezone-Shift & Foreign On-Call Gate:**
+   - Compute the required daily shift in hours between the role's stated working hours or on-call rotation and `timezone.primary_iana` (for example, `Asia/Kolkata` `IST UTC+5:30` vs. full US Eastern hours ~9.5–10.5h shift, or US Pacific ~12.5–13.5h shift).
+   - Compare strictly against `timezone.max_overlap_shift_hours` and `timezone.allow_full_foreign_shift_oncall` (default `false`) in `<workspace>/GLOBAL_REFERENCE.md`:
+     - **Hard Exclude (`reason: tz_shift_exceeded`):** Any role requiring a shift greater than `timezone.max_overlap_shift_hours`. Do **not** keep it alive in `Tier B2`.
+     - **Hard Exclude (`reason: full_foreign_shift_oncall`):** Any role requiring full foreign-timezone business hours or primary foreign-timezone on-call coverage when `timezone.allow_full_foreign_shift_oncall` is `false`.
+     - **`Tier B2` Eligible Only Within Cap:** Route cross-ocean overlap roles to `Tier B2` only when `timezone.extended_overlap_willingness` is `true`, the required shift is `<= timezone.max_overlap_shift_hours`, and no disallowed full foreign-timezone shift or on-call rotation is required.
 
 ---
 
